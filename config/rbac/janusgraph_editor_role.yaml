@@ -1,0 +1,24 @@
+# permissions for end users to edit janusgraphs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: janusgraph-editor-role
+rules:
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs/status
+  verbs:
+  - get

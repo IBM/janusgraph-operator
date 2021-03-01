@@ -1,0 +1,7 @@
+apiVersion: graph.ibm.com/v1alpha1
+kind: Janusgraph
+metadata:
+  name: janusgraph-sample
+spec:
+  # Add fields here
+  foo: bar

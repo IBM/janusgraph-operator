@@ -1,0 +1,20 @@
+# permissions for end users to view janusgraphs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: janusgraph-viewer-role
+rules:
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs/status
+  verbs:
+  - get
