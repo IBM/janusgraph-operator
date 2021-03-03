@@ -94,9 +94,28 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// persistent volume claim
+
+	pvcFound := &corev1.PersistentVolumeClaim{}
+	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, pvcFound)
+	if err != nil && errors.IsNotFound(err) {
+		pvc := r.pvcForJanusgraph(janusgraph)
+		log.Info("Creating a new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
+		err = r.Create(ctx, pvc)
+		if err != nil {
+			log.Error(err, "Failed to create new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		log.Info("Janusgraph persistent volume claim created, requeuing")
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get pvc")
+		return ctrl.Result{}, err
+	}
+
 	// deployment
 	found := &appsv1.StatefulSet{}
-
 	// Check if the deployment already exists, if not create a new one
 	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
@@ -160,7 +179,7 @@ func (r *JanusgraphReconciler) pvcForJanusgraph(m *v1alpha1.Janusgraph) *corev1.
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"),
