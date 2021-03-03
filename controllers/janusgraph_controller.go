@@ -20,10 +20,17 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
 	graphv1alpha1 "github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
 )
 
@@ -37,6 +44,8 @@ type JanusgraphReconciler struct {
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=pods;deployments;statefulsets;services;,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods;services;,verbs=get;list;create;update;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -48,9 +57,64 @@ type JanusgraphReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("janusgraph", req.NamespacedName)
+	log := r.Log.WithValues("janusgraph", req.NamespacedName)
 
-	// your logic here
+	// Fetch the Janusgraph instance
+	janusgraph := &graphv1alpha1.Janusgraph{}
+	err := r.Get(ctx, req.NamespacedName, janusgraph)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("Janusgraph resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get Janusgraph")
+		return ctrl.Result{}, err
+	}
+
+	serviceFound := &corev1.Service{}
+	log.Info("Checking for service")
+	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
+	if err != nil && errors.IsNotFound(err) {
+		srv := r.serviceForJanusgraph(janusgraph)
+		log.Info("Creating a new headless service", "Service.Namespace", srv.Namespace, "Service.Name", srv.Name)
+		err = r.Create(ctx, srv)
+		if err != nil {
+			log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		log.Info("Janusgraph service created, requeuing")
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get service")
+		return ctrl.Result{}, err
+	}
+
+	// deployment
+	found := &appsv1.StatefulSet{}
+
+	// Check if the deployment already exists, if not create a new one
+	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		dep := r.deploymentForJanusgraph(janusgraph)
+		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
+		err = r.Create(ctx, dep)
+		if err != nil {
+			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
+			return ctrl.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		log.Info("Deployment created, requeuing")
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get Deployment")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -60,4 +124,117 @@ func (r *JanusgraphReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&graphv1alpha1.Janusgraph{}).
 		Complete(r)
+}
+
+func labelsForJanusgraph(name string) map[string]string {
+	return map[string]string{"app": "Janusgraph", "janusgraph_cr": name}
+}
+
+func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *corev1.Service {
+	ls := labelsForJanusgraph(m.Name)
+	srv := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name + "-service",
+			Namespace: m.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: corev1.ClusterIPNone, //"None",
+			Ports: []corev1.ServicePort{{
+				Port: 8182,
+				Name: "janusgraph",
+			},
+			},
+			Selector: ls,
+		},
+	}
+	ctrl.SetControllerReference(m, srv, r.Scheme)
+	return srv
+}
+
+func (r *JanusgraphReconciler) pvcForJanusgraph(m *v1alpha1.Janusgraph) *corev1.PersistentVolumeClaim {
+	ls := labelsForJanusgraph(m.Name)
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name + "pvc",
+			Labels:    ls,
+			Namespace: m.Namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("5Gi"),
+				},
+			},
+		},
+	}
+
+	return pvc
+}
+
+func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
+	ls := labelsForJanusgraph(m.Name)
+	replicas := m.Spec.Size
+	version := m.Spec.Version
+
+	dep := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name,
+			Namespace: m.Namespace,
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			ServiceName: m.Name + "-service",
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+					Name:   "janusgraph",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "janusgraph/janusgraph:" + version,
+							Name:  "janusgraph",
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 8182,
+									Name:          "janusgraph",
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								InitialDelaySeconds: 480,
+								PeriodSeconds:       30,
+								TimeoutSeconds:      10,
+								FailureThreshold:    3,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name: m.Name + "-db",
+								},
+								{
+									MountPath: "/var/janusgraph/db",
+								},
+							},
+							Env: []corev1.EnvVar{},
+						}},
+					RestartPolicy: corev1.RestartPolicyAlways,
+					Volumes: []corev1.Volume{
+						{
+							Name: m.Name + "-db",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: m.Name + "-pvc",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	ctrl.SetControllerReference(m, dep, r.Scheme)
+	return dep
 }
