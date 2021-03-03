@@ -10,6 +10,7 @@ rules:
   - apps
   resources:
   - deployments
+  - persistentvolumeclaims
   - pods
   - services
   - statefulsets
@@ -24,6 +25,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - persistentvolumeclaims
   - pods
   - services
   verbs:
