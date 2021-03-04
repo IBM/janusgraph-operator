@@ -11,6 +11,7 @@ rules:
   resources:
   - deployments
   - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - services
   - statefulsets
@@ -26,6 +27,7 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - services
   verbs:

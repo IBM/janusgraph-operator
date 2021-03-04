@@ -44,8 +44,8 @@ type JanusgraphReconciler struct {
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/finalizers,verbs=update
-// +kubebuilder:rbac:groups=apps,resources=pods;deployments;statefulsets;services;persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods;services;persistentvolumeclaims;,verbs=get;list;create;update;watch
+// +kubebuilder:rbac:groups=apps,resources=pods;deployments;statefulsets;services;persistentvolumeclaims;persistentvolumes;,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods;services;persistentvolumeclaims;persistentvolumes;,verbs=get;list;create;update;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -94,6 +94,26 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	/*
+		// persistent volume
+		pvFound := &corev1.PersistentVolume{}
+		err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pv", Namespace: janusgraph.Namespace}, pvFound)
+		if err != nil && errors.IsNotFound(err) {
+			pv := r.pvForJanusgraph(janusgraph)
+			log.Info("Creating a new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
+			err = r.Create(ctx, pv)
+			if err != nil {
+				log.Error(err, "Failed to create new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
+				return ctrl.Result{}, err
+			}
+			// Deployment created successfully - return and requeue
+			log.Info("Janusgraph persistent volume created, requeuing")
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			log.Error(err, "Failed to get pv")
+			return ctrl.Result{}, err
+		}
+	*/
 	// persistent volume claim
 	pvcFound := &corev1.PersistentVolumeClaim{}
 	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pvc", Namespace: janusgraph.Namespace}, pvcFound)
@@ -110,25 +130,6 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get pvc")
-		return ctrl.Result{}, err
-	}
-
-	// persistent volume claim
-	pvFound := &corev1.PersistentVolume{}
-	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pv", Namespace: janusgraph.Namespace}, pvFound)
-	if err != nil && errors.IsNotFound(err) {
-		pv := r.pvForJanusgraph(janusgraph)
-		log.Info("Creating a new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
-		err = r.Create(ctx, pv)
-		if err != nil {
-			log.Error(err, "Failed to create new pvc", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
-			return ctrl.Result{}, err
-		}
-		// Deployment created successfully - return and requeue
-		log.Info("Janusgraph persistent volume created, requeuing")
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get pv")
 		return ctrl.Result{}, err
 	}
 
@@ -197,7 +198,7 @@ func (r *JanusgraphReconciler) pvcForJanusgraph(m *v1alpha1.Janusgraph) *corev1.
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"),
@@ -218,13 +219,9 @@ func (r *JanusgraphReconciler) pvForJanusgraph(m *v1alpha1.Janusgraph) *corev1.P
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.PersistentVolumeSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			Capacity: corev1.ResourceList{
 				corev1.ResourceStorage: resource.MustParse("5Gi"),
-			},
-			ClaimRef: &corev1.ObjectReference{
-				Name:      m.Name + "pvc",
-				Namespace: m.Namespace,
 			},
 		},
 	}
@@ -278,7 +275,7 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      m.Name + "-db",
-									MountPath: "/var/janusgraph/db",
+									MountPath: "/opt/janusgraph/db",
 								},
 							},
 							Env: []corev1.EnvVar{},
