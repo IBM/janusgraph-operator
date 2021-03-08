@@ -95,43 +95,44 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	/*
-		// persistent volume
-		pvFound := &corev1.PersistentVolume{}
-		err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pv", Namespace: janusgraph.Namespace}, pvFound)
+			// persistent volume
+			pvFound := &corev1.PersistentVolume{}
+			err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pv", Namespace: janusgraph.Namespace}, pvFound)
+			if err != nil && errors.IsNotFound(err) {
+				pv := r.pvForJanusgraph(janusgraph)
+				log.Info("Creating a new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
+				err = r.Create(ctx, pv)
+				if err != nil {
+					log.Error(err, "Failed to create new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
+					return ctrl.Result{}, err
+				}
+				// Deployment created successfully - return and requeue
+				log.Info("Janusgraph persistent volume created, requeuing")
+				return ctrl.Result{Requeue: true}, nil
+			} else if err != nil {
+				log.Error(err, "Failed to get pv")
+				return ctrl.Result{}, err
+			}
+
+		// persistent volume claim
+		pvcFound := &corev1.PersistentVolumeClaim{}
+		err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pvc", Namespace: janusgraph.Namespace}, pvcFound)
 		if err != nil && errors.IsNotFound(err) {
-			pv := r.pvForJanusgraph(janusgraph)
-			log.Info("Creating a new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
-			err = r.Create(ctx, pv)
+			pvc := r.pvcForJanusgraph(janusgraph)
+			log.Info("Creating a new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
+			err = r.Create(ctx, pvc)
 			if err != nil {
-				log.Error(err, "Failed to create new pv", "pv.Namespace", pv.Namespace, "pv.Name", pv.Name)
+				log.Error(err, "Failed to create new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
 				return ctrl.Result{}, err
 			}
 			// Deployment created successfully - return and requeue
-			log.Info("Janusgraph persistent volume created, requeuing")
+			log.Info("Janusgraph persistent volume claim created, requeuing")
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
-			log.Error(err, "Failed to get pv")
+			log.Error(err, "Failed to get pvc")
 			return ctrl.Result{}, err
 		}
 	*/
-	// persistent volume claim
-	pvcFound := &corev1.PersistentVolumeClaim{}
-	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-pvc", Namespace: janusgraph.Namespace}, pvcFound)
-	if err != nil && errors.IsNotFound(err) {
-		pvc := r.pvcForJanusgraph(janusgraph)
-		log.Info("Creating a new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
-		err = r.Create(ctx, pvc)
-		if err != nil {
-			log.Error(err, "Failed to create new pvc", "pvc.Namespace", pvc.Namespace, "pvc.Name", pvc.Name)
-			return ctrl.Result{}, err
-		}
-		// Deployment created successfully - return and requeue
-		log.Info("Janusgraph persistent volume claim created, requeuing")
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get pvc")
-		return ctrl.Result{}, err
-	}
 
 	// deployment
 	found := &appsv1.StatefulSet{}
@@ -261,36 +262,36 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 									Name:          "janusgraph",
 								},
 							},
-							ReadinessProbe: &corev1.Probe{
-								InitialDelaySeconds: 480,
-								PeriodSeconds:       30,
-								TimeoutSeconds:      10,
-								FailureThreshold:    3,
-								Handler: corev1.Handler{
-									Exec: &corev1.ExecAction{
-										Command: []string{"sh", "/tmp/readiness.sh"},
-									},
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      m.Name + "-db",
-									MountPath: "/opt/janusgraph/db",
-								},
-							},
+							// ReadinessProbe: &corev1.Probe{
+							// 	InitialDelaySeconds: 480,
+							// 	PeriodSeconds:       30,
+							// 	TimeoutSeconds:      10,
+							// 	FailureThreshold:    3,
+							// 	Handler: corev1.Handler{
+							// 		Exec: &corev1.ExecAction{
+							// 			Command: []string{"sh", "/tmp/readiness.sh"},
+							// 		},
+							// 	},
+							// },
+							// VolumeMounts: []corev1.VolumeMount{
+							// 	{
+							// 		Name:      m.Name + "-db",
+							// 		MountPath: "/opt/janusgraph/db",
+							// 	},
+							// },
 							Env: []corev1.EnvVar{},
 						}},
 					RestartPolicy: corev1.RestartPolicyAlways,
-					Volumes: []corev1.Volume{
-						{
-							Name: m.Name + "-db",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: m.Name + "-pvc",
-								},
-							},
-						},
-					},
+					// Volumes: []corev1.Volume{
+					// 	{
+					// 		Name: m.Name + "-db",
+					// 		VolumeSource: corev1.VolumeSource{
+					// 			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					// 				ClaimName: m.Name + "-pvc",
+					// 			},
+					// 		},
+					// 	},
+					// },
 				},
 			},
 		},
