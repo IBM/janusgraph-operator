@@ -177,7 +177,7 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: corev1.ClusterIPNone, //"None",
+			// ClusterIP: corev1.ClusterIPNone, //"None",
 			Ports: []corev1.ServicePort{{
 				Port: 8182,
 				Name: "janusgraph",
@@ -256,6 +256,11 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 						{
 							Image: "janusgraph/janusgraph:" + version,
 							Name:  "janusgraph",
+							// SecurityContext: &corev1.SecurityContext{
+							// 	RunAsUser: 9999,
+							// },
+							// Command: []string{"/bin/sh"},
+							// Args:    []string{"-c", "chgrp -R 0 /etc/opt/janusgraph;chmod -R g=u /etc/opt/janusgraph/"},
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8182,
