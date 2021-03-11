@@ -235,6 +235,9 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 	replicas := m.Spec.Size
 	version := m.Spec.Version
 
+	var userID int64 = 999
+	trueBool := true
+
 	dep := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.Name,
@@ -252,15 +255,15 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 					Name:   "janusgraph",
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						SupplementalGroups: []int64{userID},
+						RunAsNonRoot:       &trueBool,
+					},
+					ServiceAccountName: "janus-sa",
 					Containers: []corev1.Container{
 						{
 							Image: "janusgraph/janusgraph:" + version,
 							Name:  "janusgraph",
-							// SecurityContext: &corev1.SecurityContext{
-							// 	RunAsUser: 9999,
-							// },
-							// Command: []string{"/bin/sh"},
-							// Args:    []string{"-c", "chgrp -R 0 /etc/opt/janusgraph;chmod -R g=u /etc/opt/janusgraph/"},
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8182,
