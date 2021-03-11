@@ -257,9 +257,9 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
 						SupplementalGroups: []int64{userID},
-						RunAsNonRoot:       &trueBool,
+						// RunAsNonRoot:       &trueBool,
 					},
-					ServiceAccountName: "janus-sa",
+					ServiceAccountName: "janus-custom-sa",
 					Containers: []corev1.Container{
 						{
 							Image: "janusgraph/janusgraph:" + version,
