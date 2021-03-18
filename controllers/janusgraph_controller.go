@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -177,11 +178,15 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			// ClusterIP: corev1.ClusterIPNone, //"None",
-			Ports: []corev1.ServicePort{{
-				Port: 8182,
-				Name: "janusgraph",
-			},
+			Type: corev1.ServiceTypeLoadBalancer,
+			Ports: []corev1.ServicePort{
+				{
+					Port: 8182,
+					TargetPort: intstr.IntOrString{
+						IntVal: 8182,
+					},
+					NodePort: 30184,
+				},
 			},
 			Selector: ls,
 		},
@@ -235,8 +240,8 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 	replicas := m.Spec.Size
 	version := m.Spec.Version
 
-	var userID int64 = 999
-	trueBool := true
+	// var userID int64 = 999
+	// trueBool := true
 
 	dep := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -255,15 +260,18 @@ func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *
 					Name:   "janusgraph",
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						SupplementalGroups: []int64{userID},
-						// RunAsNonRoot:       &trueBool,
-					},
-					ServiceAccountName: "janus-custom-sa",
+					// SecurityContext: &corev1.PodSecurityContext{
+					// 	SupplementalGroups: []int64{userID},
+					// 	// RunAsNonRoot:       &trueBool,
+					// },
+					// ServiceAccountName: "janus-custom-sa",
 					Containers: []corev1.Container{
 						{
-							Image: "janusgraph/janusgraph:" + version,
+							Image: "sanjeevghimire/janusgraph:" + version,
 							Name:  "janusgraph",
+							// SecurityContext: &corev1.SecurityContext{
+							// 	RunAsUser: &userID,
+							// },
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8182,

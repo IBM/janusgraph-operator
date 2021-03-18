@@ -3,7 +3,7 @@ set -x
 set -e
 
 img="sanjeevghimire/janusgraph-operator:latest"
-namespace="sanjeev-operator-proj"
+namespace="sanjeev-janus"
 
 cd config/manager
 kustomize edit set namespace $namespace
