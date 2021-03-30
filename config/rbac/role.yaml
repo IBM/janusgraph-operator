@@ -1,0 +1,64 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - services
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - graph.ibm.com
+  resources:
+  - janusgraphs/status
+  verbs:
+  - get
+  - patch
+  - update

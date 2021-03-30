@@ -22,7 +22,7 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      securityContext:
+      securityContext:         
       containers:
       - command:
         - /manager
