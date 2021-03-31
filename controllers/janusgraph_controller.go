@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -115,7 +116,37 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// Status check
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(janusgraph.Namespace),
+		client.MatchingLabels(labelsForJanusgraph(janusgraph.Name)),
+	}
+	if err = r.List(ctx, podList, listOpts...); err != nil {
+		log.Error(err, "Failed to list pods", "Janusgraph.Namespace", janusgraph.Namespace, "Janusgraph.Name", janusgraph.Name)
+		return ctrl.Result{}, err
+	}
+	podNames := getPodNames(podList.Items)
+
+	// Update status.Nodes if needed
+	if !reflect.DeepEqual(podNames, janusgraph.Status.Nodes) {
+		janusgraph.Status.Nodes = podNames
+		err := r.Status().Update(ctx, janusgraph)
+		if err != nil {
+			log.Error(err, "Failed to update Janusgraph status")
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
+	}
+	return podNames
 }
 
 // SetupWithManager sets up the controller with the Manager.
