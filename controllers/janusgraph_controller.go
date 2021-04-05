@@ -87,7 +87,7 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
 			return ctrl.Result{}, err
 		}
-		// Deployment created successfully - return and requeue
+		// Service created successfully - return and requeue
 		log.Info("Janusgraph service created, requeuing")
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
@@ -95,40 +95,43 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	// deployment
+	// look for a resource of type StatefulSet
 	found := &appsv1.StatefulSet{}
-	// Check if the deployment already exists, if not create a new one
+	// Check if the StatefulSet already exists in our namespace, if not create a new one
 	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new deployment
-		dep := r.deploymentForJanusgraph(janusgraph)
+		// Define a new StatefulSet
+		dep := r.statefulSetForJanusgraph(janusgraph)
 		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
 			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
 			return ctrl.Result{}, err
 		}
-		// Deployment created successfully - return and requeue
-		log.Info("Deployment created, requeuing")
+		// StatefulSet created successfully - return and requeue
+		log.Info("StatefulSet created, requeuing")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Deployment")
+		log.Error(err, "Failed to get StatefulSet")
 		return ctrl.Result{}, err
 	}
 
-	// Status check
+	// look for resource of type PodList
 	podList := &corev1.PodList{}
+	//create filter to check for Pods only in our Namespace with the correct matching labels
 	listOpts := []client.ListOption{
 		client.InNamespace(janusgraph.Namespace),
 		client.MatchingLabels(labelsForJanusgraph(janusgraph.Name)),
 	}
+	//List all Pods that match our filter (same Namespace and matching labels)
 	if err = r.List(ctx, podList, listOpts...); err != nil {
 		log.Error(err, "Failed to list pods", "Janusgraph.Namespace", janusgraph.Namespace, "Janusgraph.Name", janusgraph.Name)
 		return ctrl.Result{}, err
 	}
+	//return an array of pod names
 	podNames := getPodNames(podList.Items)
 
-	// Update status.Nodes if needed
+	// Update the status of our JanusGraph object to show Pods which were returned from getPodNames
 	if !reflect.DeepEqual(podNames, janusgraph.Status.Nodes) {
 		janusgraph.Status.Nodes = podNames
 		err := r.Status().Update(ctx, janusgraph)
@@ -141,6 +144,7 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
+// getPodNames returns a string array of Pod Names
 func getPodNames(pods []corev1.Pod) []string {
 	var podNames []string
 	for _, pod := range pods {
@@ -156,10 +160,12 @@ func (r *JanusgraphReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// labelsForJanusgraph returns a map of string keys and string values
 func labelsForJanusgraph(name string) map[string]string {
 	return map[string]string{"app": "Janusgraph", "janusgraph_cr": name}
 }
 
+// serviceForJanusgraph returns a Load Balancer service for our JanusGraph object
 func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *corev1.Service {
 	ls := labelsForJanusgraph(m.Name)
 	srv := &corev1.Service{
@@ -185,7 +191,8 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 	return srv
 }
 
-func (r *JanusgraphReconciler) deploymentForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
+// serviceForJanusgraph returns a service of type Load Balancer for our JanusGraph object
+func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
 	ls := labelsForJanusgraph(m.Name)
 	replicas := m.Spec.Size
 	version := m.Spec.Version
