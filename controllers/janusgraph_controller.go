@@ -76,8 +76,10 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	// fetch Service resource
 	serviceFound := &corev1.Service{}
 	log.Info("Checking for service")
+	//check for Service resources in our namespace, and with a "JanusGraph" name prefix
 	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
 	if err != nil && errors.IsNotFound(err) {
 		srv := r.serviceForJanusgraph(janusgraph)
@@ -101,11 +103,11 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new StatefulSet
-		dep := r.statefulSetForJanusgraph(janusgraph)
-		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
-		err = r.Create(ctx, dep)
+		statefulSet := r.statefulSetForJanusgraph(janusgraph)
+		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
+		err = r.Create(ctx, statefulSet)
 		if err != nil {
-			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
+			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
 			return ctrl.Result{}, err
 		}
 		// StatefulSet created successfully - return and requeue
@@ -167,7 +169,10 @@ func labelsForJanusgraph(name string) map[string]string {
 
 // serviceForJanusgraph returns a Load Balancer service for our JanusGraph object
 func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *corev1.Service {
+
+	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
+	//create Service
 	srv := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.Name + "-service",
@@ -191,16 +196,18 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 	return srv
 }
 
-// serviceForJanusgraph returns a service of type Load Balancer for our JanusGraph object
+// statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
+
+	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
+	//fetch the size of the JanusGraph object from the custom resource
 	replicas := m.Spec.Size
+	//fetch the version of JanusGraph to install from the custom resource
 	version := m.Spec.Version
 
-	// var userID int64 = 999
-	// trueBool := true
-
-	dep := &appsv1.StatefulSet{
+	//create StatefulSet
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.Name,
 			Namespace: m.Namespace,
@@ -234,6 +241,6 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 			},
 		},
 	}
-	ctrl.SetControllerReference(m, dep, r.Scheme)
-	return dep
+	ctrl.SetControllerReference(m, statefulSet, r.Scheme)
+	return statefulSet
 }
