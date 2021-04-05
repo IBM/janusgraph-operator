@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: cassandra-service
+spec:
+  ports:
+    - name: cassandra
+      protocol: TCP
+      port: 9042
+      targetPort: 9042
+  selector:
+    app: cassandra
+  type: ClusterIP
+  sessionAffinity: None
