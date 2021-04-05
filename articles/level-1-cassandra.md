@@ -12,7 +12,7 @@ When the reader has completed this tutorial, they will understand how to:
 
 ## Flow
 
-TBD
+![Architecture](../images/architecture.png)
 
 
 ## Included components
@@ -31,7 +31,7 @@ TBD
 1. [Deploy Cassandra to OpenShift](#1-deploy-cassandra-to-openshift)
 1. [Clone and Modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
 1. [Deploy Janusgraph operator](#3-deploy-janusgraph-operator)
-1. [Load and retrieve of data using gremlin console](#3-load-and-retrieve-of-data-using-gremlin-console)
+1. [Load and test retrieve of data using gremlin console](#3-load-and-test-retrieve-of-data-using-gremlin-console)
 1. [Test Janusgraph operator for scale up and down](#4-test-janusgraph-operator-for-scale-up-and-down)
 
 ### 1. Deploy Cassandra to OpenShift
@@ -39,7 +39,9 @@ TBD
 Clone the `cassandra-openshift` locally. In a terminal, run:
 
 ```bash
-git clone https://github.com/sanjeevghimire/cassandra-openshift
+git clone https://github.com/IBM/janusgraph-operator.git
+
+cd cassandra-openshift
 ```
 
 We need to update the default configurations of Cassandra so that it can be deployed to OpenShift. The changes are defined in the `Dockerfile`. In order to adapt to openshift environment, we need to change the group ownership and file permission to root. Although OpenShift runs containers using an arbitrarily assigned user ID, the group ID must always be set to the root group (0). And there are other changes that Cassandra needs for it to be successfully deployed which will not be covered part of this tutorial.
@@ -72,6 +74,7 @@ To make sure cassandra is running, it should create one instance of cassandra da
 
 The Janusgraph docker image from the official repo deploys fine with kubernetes but not for openshift. There are few things that needs to be modified before we deploy:
 
+* Fork the repo `https://github.com/JanusGraph/janusgraph-docker`
 * Change the file and group ownership to root (0) for related folders. Following modifications are applies to the `Dockerfile`:
 ```bash
 chgrp -R 0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
@@ -119,3 +122,19 @@ index.search.directory=/var/lib/janusgraph/index
 ```
 These are properties that allows Janusgraph to talk to Cassandra as Cassandra will be storing the data in a distributed fashion.
 
+After these changes, make sure to update `janusgraph-cql-server.properties` with the `cluster-ip` of cassandra service. Update `storage.hostname` with the `Cluster-IP`.
+
+![Cluster IP](../images/cluster-ip.png)
+
+Now we can build and deploy the Janusgraph docker image to openshift by running:
+
+```bash
+./build-images-ibm.sh -- if you have created a new file
+```
+OR
+
+```bash
+./build-images.sh -- if you have modified file provided by Janusgraph
+```
+
+### 3. Load and test retrieve of data using gremlin console
