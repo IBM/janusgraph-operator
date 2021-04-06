@@ -1,4 +1,4 @@
-# Develop and Deploy a Level 1 JanusGraph Operator using Cassandra - Part 2
+# LEVEL 1 : JanusGraph Operator using Cassandra - Part 2
 
 In this tutorial, we will learn how to develop and deploy a Level 1 operator on the OpenShift Container Platform. We will be creating an operator for Janusgraph which will use Cassandra as an storage backend. Cassandra is a distributed database platform which can scale and be highly available, and can perform really well on any commodity hardware or cloud infrastructure. To learn more about Cassandra you can read more [here](https://casandra.apache.org).
 
@@ -9,6 +9,11 @@ When the reader has completed this tutorial, they will understand how to:
 * Scale Janusgraph instance up/down by modifying and applying the Custom Resource (CR) to Openshift cluster.
 
 > Note: Cassandra deployment is not part of this tutorial. We assume that Cassandra is already available whether its deployed from operator hub or as a standalone deployment.
+
+For a LEVEL 1, Janusgraph operator will have the following capabillities:
+* Deployment of Janusgraph by creating Services, Deployments, RoleBinding.
+* Make sure the managed resources reaches healthy state and conveys readiness of the resources to the user using the status block of the custom resource.
+* Manages scalability by resizing the underlying resources by applying changes to the Custom Resource instance.
 
 ## Flow
 
@@ -39,9 +44,9 @@ When the reader has completed this tutorial, they will understand how to:
 Clone the `cassandra-openshift` locally. In a terminal, run:
 
 ```bash
-git clone https://github.com/IBM/janusgraph-operator.git
+$ git clone https://github.com/IBM/janusgraph-operator.git
 
-cd cassandra-openshift
+$ cd cassandra-openshift
 ```
 
 We need to update the default configurations of Cassandra so that it can be deployed to OpenShift. The changes are defined in the `Dockerfile`. In order to adapt to openshift environment, we need to change the group ownership and file permission to root. Although OpenShift runs containers using an arbitrarily assigned user ID, the group ID must always be set to the root group (0). And there are other changes that Cassandra needs for it to be successfully deployed which will not be covered part of this tutorial.
@@ -63,7 +68,7 @@ Once the image is built, you can now deploy Cassandra as `Stateful set` in opens
 Run the following command to deploy Cassandra from the cloned directory in the terminal:
 
 ```bash
-oc apply -f cassandra-app-v1.yaml -f cassandra-svc-v1.yaml
+$ oc apply -f cassandra-app-v1.yaml -f cassandra-svc-v1.yaml
 ```
 
 To make sure cassandra is running, it should create one instance of cassandra database. If you want to have multiple replicas, you can modify replicas in the `cassandra-app-v1.yaml`.
@@ -129,12 +134,65 @@ After these changes, make sure to update `janusgraph-cql-server.properties` with
 Now we can build and deploy the Janusgraph docker image to openshift by running:
 
 ```bash
-./build-images-ibm.sh -- if you have created a new file
+$ ./build-images-ibm.sh -- if you have created a new file
 ```
 OR
 
 ```bash
-./build-images.sh -- if you have modified file provided by Janusgraph
+$ ./build-images.sh -- if you have modified file provided by Janusgraph
 ```
 
-### 3. Load and test retrieve of data using gremlin console
+### 3. Deploy Janusgraph Operator
+
+The operator project is created using `Operator SDK` and you can initialize and create project structure using the SDK. For our ease, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can use our operator aritcles [here](link to article and/or tutorial).
+
+Our Custom Resource (CR) instance looks like following:
+
+```yaml
+apiVersion: graph.ibm.com/v1alpha1
+kind: Janusgraph
+metadata:
+  name: janusgraph-sample
+spec:
+  # Add fields here
+  size: 3
+  version: latest
+```
+
+The spec definition defined in our API looks like below:
+
+```go
+type JanusgraphSpec struct {}	
+	Size    int32  `json:"size"`
+	Version string `json:"version"`
+}
+```
+
+
+From the cloned project root directory, open `build-and-deploy.sh` script in an editor and change following parameters:
+
+```bash
+img="<image repo name>/<username>/<image name>:<tag>"
+namespace="<namespace>"
+```
+
+and finally run the following from your terminal:
+
+```bash
+$ ./build-and-deploy.sh
+```
+
+For more information, you can checkout the controller code. The operator controller code is responsible for doing following tasks:
+* Create services so that it can be exposed with an IP.
+* Create deployments of Janusgraph images based on Custom Resource instance specification
+* Conveys readiness of Jansgraph leveraging the status block of Custom Resource.
+
+Let's take a look at all the resources that operator deployed for Janusgraph. Run following command in your terminal:
+```bash
+$ oc get all
+```
+Output:
+
+![Oc get all](../images/oc-get-all.png)
+
+### 4. Load and test retrieve of data using gremlin console
