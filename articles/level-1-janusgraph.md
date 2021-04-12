@@ -31,6 +31,14 @@ For a LEVEL 1, Janusgraph operator will have the following capabillities:
 
 * [RedHat OpenShift Operator](https://www.openshift.com/learn/topics/operators): Automate the creation, configuration, and management of instances of Kubernetes-native applications.
 
+## Pre-Requisites
+
+* You have little or no experience developing operators
+* You have some knowledge of Kubernetes Operators concepts
+* You've created [memcached operator](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md)
+* You've read [Deep Dive into Memcached Operator Code](https://github.ibm.com/TT-ISV-org/operator/blob/main/INTERMEDIATE_TUTORIAL.md)
+* You've setup your environment as shown in the [Setup your Environment](https://github.ibm.com/TT-ISV-org/operator/blob/main/installation.md) tutorial
+
 ## Steps
 
 1. [Deploy Cassandra to OpenShift](#1-deploy-cassandra-to-openshift)
