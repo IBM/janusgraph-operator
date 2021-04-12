@@ -37,7 +37,7 @@ For a LEVEL 1, Janusgraph operator will have the following capabillities:
 1. [Clone and Modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
 1. [Deploy Janusgraph operator](#3-deploy-janusgraph-operator)
 1. [Load and test retrieve of data using gremlin console](#3-load-and-test-retrieve-of-data-using-gremlin-console)
-1. [Test Janusgraph operator for scale up and down](#4-test-janusgraph-operator-for-scale-up-and-down)
+1. [Test sizing of Janusgraph using the operator](#4-test-sizing-of-janusgraph-using-the-operator)
 
 ### 1. Deploy Cassandra to OpenShift
 
@@ -196,3 +196,102 @@ Output:
 ![Oc get all](../images/oc-get-all.png)
 
 ### 4. Load and test retrieve of data using gremlin console
+
+In order to load the data, there is a groovy script [load_data.groovy](data/load_data.groovy), which you need to run from your gremlin console. First, download the gremlin console if you haven't already from https://tinkerpop.apache.org/downloads.html.
+
+Once downloaded and unzipped, go to `conf/remote.yaml` and update with following configuration:
+
+> NOTE: HOST_NAME below is the external IP from your cluster which can be retrieved using `oc get svc`. Copy the `EXTERNAL-IP` for `jansugraph-sample-service` and replace.
+
+```yaml
+hosts: [HOST_NAME]
+port: 8182
+serializer: { 
+  className: org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0, config: { serializeResultToString: true }
+}
+connectionPool: {
+  enableSsl: false,
+  maxInProcessPerConnection: 16,
+  # The maximum number of times that a connection can be borrowed from the pool simultaneously.
+  maxSimultaneousUsagePerConnection: 32,
+  # The maximum size of a connection pool for a host.
+  maxSize: 32,
+  maxContentLength: 81928192
+}
+# Size of the pool for handling background work. default : available processors * 2
+workerPoolSize: 16
+# Size of the pool for handling request/response operations. # default : available processors
+nioPoolSize: 8
+
+```
+
+Copy the groovy script and paste it to the gremlin console data directory. Then from the terminal run the following from the root of your gremlin console.
+
+```bash
+$ bin/gremlin.sh
+
+$ :remote connect tinkerpop.server conf/remote.yaml
+
+$ :remote console
+
+```
+
+Then run the following command to load the groovy script that you copied and pasted to the data directory:
+
+```bash
+$ :load data/load_data.groovy
+```
+
+This will load the data and to test to make sure the data has been successfully loaded, we will run a gremlin query to get all the airlines:
+```bash
+gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
+==>MilkyWay Airlines
+==>Spartan Airlines
+==>Phoenix Airlines
+```
+
+We have now successfully loaded our data.
+
+### 5. Test sizing of Janusgraph operator
+
+In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done from the console. Go to openshift console in IBM cloud.
+
+From your provisioned cluster which which you have already setup part of pre-requisistes, select the cluster and go to `OpenShift web console` by clicking the button from top right corner of the page.
+
+![OpenShift](../images/openshift-2.png)
+
+Then, choose your project by clicking `Projects` from the left navigation menu and selecting your `project name`, which is also the `namespace` that you have used before deploying the operator.
+
+Then from the left navigation menu again, select `workloads` and click `Stateful Sets` to get the operator deployment. In the main page, you will see `janusgraph sample` as stateful deployment, select that deployment.
+
+![stateful set](../images/statefulset.png)
+
+This will bring to a screen that shows the number of replicas that has been deployed.
+
+![Replicas](../images/replicas.png)
+
+To test the sizing of Janusgraph, you can increase the number of pods by clicking the up arrow next to pods and decrease by clicking the down arrow next to the pods.
+
+After each increment and decrement, you can go to the terminal where you have connected to Janusgraph using gremlin console from your local machine, and run `get` commands to retrieve data back. On all resizing, you should consistently see the same amount of data retrieved. Run the following query to receive all the airlines with duplicat data removed: 
+
+```bash
+$ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
+```
+
+This should consistently retrieve same data back despite of any number of resizing. The output will be as below: 
+
+```bash
+[
+  "Spartan Airlines",
+  "Phoenix Airlines",
+  "MilkyWay Airline"
+]
+```
+
+**Congratulations!** You've successfully deployed an Janusgraph operator `Level I`. And you also have tested the deployment with resizing the replicas and  checked the integrity of the data in new pods.
+
+# License
+
+This code pattern is licensed under the Apache Software License, Version 2.  Separate third party code objects invoked within this code pattern are licensed by their respective providers pursuant to their own separate licenses. Contributions are subject to the [Developer Certificate of Origin, Version 1.1 (DCO)](https://developercertificate.org/) and the [Apache Software License, Version 2](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+[Apache Software License (ASL) FAQ](https://www.apache.org/foundation/license-faq.html#WhatDoesItMEAN)
