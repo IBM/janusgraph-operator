@@ -22,7 +22,8 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      securityContext:         
+      securityContext:
+        runAsNonRoot: true    
       containers:
       - command:
         - /manager
