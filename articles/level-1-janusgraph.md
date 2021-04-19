@@ -154,7 +154,16 @@ $ ./build-images.sh -- if you have modified file provided by Janusgraph
 
 The operator project is created using `Operator SDK` and you can initialize and create project structure using the SDK. For our ease, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can use our operator aritcles [here](link to article and/or tutorial).
 
-Our Custom Resource (CR) instance looks like following:
+Our Custom Resource (CR) instance and Spec definition in our API looks like following:
+
+
+<table>
+<tr>
+<th>Custom Resource (CR)</th>
+<th>Spec API Definition</th>
+</tr>
+<tr>
+<td>
 
 ```yaml
 apiVersion: graph.ibm.com/v1alpha1
@@ -165,9 +174,9 @@ spec:
   # Add fields here
   size: 3
   version: latest
-```
-
-The spec definition defined in our API looks like below:
+``` 
+</td>
+<td>
 
 ```go
 type JanusgraphSpec struct {}	
@@ -175,6 +184,10 @@ type JanusgraphSpec struct {}
 	Version string `json:"version"`
 }
 ```
+
+</td>
+</tr>
+</table>
 
 
 From the cloned project root directory, open `build-and-deploy.sh` script in an editor and change following parameters:
