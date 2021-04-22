@@ -20,6 +20,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,45 +78,56 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	// fetch Service resource
-	serviceFound := &corev1.Service{}
-	log.Info("Checking for service")
-	//check for Service resources in our namespace, and with a "JanusGraph" name prefix
-	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
-	if err != nil && errors.IsNotFound(err) {
-		srv := r.serviceForJanusgraph(janusgraph)
-		log.Info("Creating a new headless service", "Service.Namespace", srv.Namespace, "Service.Name", srv.Name)
-		err = r.Create(ctx, srv)
-		if err != nil {
-			log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
-			return ctrl.Result{}, err
-		}
-		// Service created successfully - return and requeue
-		log.Info("Janusgraph service created, requeuing")
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get service")
-		return ctrl.Result{}, err
+	// serviceFound := &corev1.Service{}
+	// log.Info("Checking for service")
+	// //check for Service resources in our namespace, and with a "JanusGraph" name prefix
+	// err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	srv := r.serviceForJanusgraph(janusgraph)
+	// 	log.Info("Creating a new headless service", "Service.Namespace", srv.Namespace, "Service.Name", srv.Name)
+	// 	err = r.Create(ctx, srv)
+	// 	if err != nil {
+	// 		log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	// Service created successfully - return and requeue
+	// 	log.Info("Janusgraph service created, requeuing")
+	// 	return ctrl.Result{Requeue: true}, nil
+	// } else if err != nil {
+	// 	log.Error(err, "Failed to get service")
+	// 	return ctrl.Result{}, err
+	// }
+	var result *ctrl.Result
+	service := r.serviceForJanusgraph(janusgraph)
+	result, err = r.ensureService(ctx, janusgraph, service)
+	if result != nil {
+		return *result, err
 	}
-
 	// look for a resource of type StatefulSet
-	found := &appsv1.StatefulSet{}
+	// found := &appsv1.StatefulSet{}
 	// Check if the StatefulSet already exists in our namespace, if not create a new one
-	err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new StatefulSet
-		statefulSet := r.statefulSetForJanusgraph(janusgraph)
-		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
-		err = r.Create(ctx, statefulSet)
-		if err != nil {
-			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
-			return ctrl.Result{}, err
-		}
-		// StatefulSet created successfully - return and requeue
-		log.Info("StatefulSet created, requeuing")
-		return ctrl.Result{}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get StatefulSet")
-		return ctrl.Result{}, err
+	// err = r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	// Define a new StatefulSet
+	// 	statefulSet := r.statefulSetForJanusgraph(janusgraph)
+	// 	log.Info("Creating a new Statefulset", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
+	// 	err = r.Create(ctx, statefulSet)
+	// 	if err != nil {
+	// 		log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", statefulSet.Namespace, "StatefulSet.Name", statefulSet.Name)
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	// StatefulSet created successfully - return and requeue
+	// 	log.Info("StatefulSet created, requeuing")
+	// 	return ctrl.Result{}, nil
+	// } else if err != nil {
+	// 	log.Error(err, "Failed to get StatefulSet")
+	// 	return ctrl.Result{}, err
+	// }
+
+	statefulSetDep := r.statefulSetForJanusgraph(janusgraph)
+	result, err = r.ensureDeployment(ctx, janusgraph, statefulSetDep)
+	if result != nil {
+		return *result, err
 	}
 
 	// look for resource of type PodList
@@ -198,7 +210,6 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 
 // statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
-
 	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
 	//fetch the size of the JanusGraph object from the custom resource
@@ -243,4 +254,59 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 	}
 	ctrl.SetControllerReference(m, statefulSet, r.Scheme)
 	return statefulSet
+}
+
+func (r *JanusgraphReconciler) ensureDeployment(ctx context.Context,
+	janusgraph *graphv1alpha1.Janusgraph,
+	dep *appsv1.StatefulSet,
+) (*ctrl.Result, error) {
+	// See if deployment already exists and create if it doesn't
+	// look for a resource of type StatefulSet
+	found := &appsv1.StatefulSet{}
+	// Check if the StatefulSet already exists in our namespace, if not create a new one
+	err := r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new StatefulSet
+		// dep := r.statefulSetForJanusgraph(janusgraph)
+		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
+		err = r.Create(ctx, dep)
+		if err != nil {
+			log.Error(err, "Failed to create new StatefulSet", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
+			return &ctrl.Result{}, err
+		}
+		// StatefulSet created successfully - return and requeue
+		log.Info("StatefulSet created, requeuing")
+		return &ctrl.Result{}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get StatefulSet")
+		return &ctrl.Result{}, err
+	}
+
+	return &ctrl.Result{}, nil
+}
+
+func (r *JanusgraphReconciler) ensureService(ctx context.Context,
+	janusgraph *graphv1alpha1.Janusgraph,
+	srv *corev1.Service,
+) (*ctrl.Result, error) {
+	serviceFound := &corev1.Service{}
+	log.Info("Checking for service")
+	//check for Service resources in our namespace, and with a "JanusGraph" name prefix
+	err := r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
+	if err != nil && errors.IsNotFound(err) {
+		//srv := r.serviceForJanusgraph(janusgraph)
+		log.Info("Creating a new headless service", "Service.Namespace", srv.Namespace, "Service.Name", srv.Name)
+		err = r.Create(ctx, srv)
+		if err != nil {
+			log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
+			return &ctrl.Result{}, err
+		}
+		// Service created successfully - return and requeue
+		log.Info("Janusgraph service created, requeuing")
+		return &ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get service")
+		return &ctrl.Result{}, err
+	}
+	return &ctrl.Result{}, nil
 }

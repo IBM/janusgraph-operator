@@ -152,7 +152,7 @@ $ ./build-images.sh -- if you have modified file provided by Janusgraph
 
 ### 3. Deploy Janusgraph Operator
 
-The operator project is created using `Operator SDK` and you can initialize and create project structure using the SDK. For our ease, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can use our operator aritcles [here](link to article and/or tutorial).
+The operator project is created using `Operator SDK` and you can initialize and create project structure using the SDK. For our ease, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can go to our operator aritcles [here](link to article and/or tutorial).
 
 Our Custom Resource (CR) instance and Spec definition in our API looks like following:
 
@@ -252,8 +252,6 @@ Copy the groovy script and paste it to the gremlin console data directory. Then 
 $ bin/gremlin.sh
 
 $ :remote connect tinkerpop.server conf/remote.yaml
-
-$ :remote console
 
 ```
 
