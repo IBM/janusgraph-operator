@@ -1,13 +1,19 @@
 domain: ibm.com
-layout: go.kubebuilder.io/v3
-projectName: janusgraph-operator
-repo: github.ibm.com/TT-ISV-org/janusgraph-operator
-resources:
-- crdVersion: v1
-  group: graph
-  kind: Janusgraph
-  version: v1alpha1
-version: 3-alpha
+layout:
+- go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
+projectName: janusgraph-operator
+repo: github.ibm.com/TT-ISV-org/janusgraph-operator
+resources:
+- api:
+    crdVersion: v1alpha1
+    namespaced: true
+  controller: true
+  domain: ibm.com
+  group: graph
+  kind: Janusgraph
+  path: github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

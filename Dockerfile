@@ -1,6 +1,16 @@
 # Build the manager binary
 FROM golang:1.15 as builder
 
+LABEL name="JanusGraph Operator Using Cassandra" \
+  vendor="IBM" \
+  version="v0.0.1" \
+  release="1" \
+  summary="This is a JanusGraph operator that ensures stateful deployment in an OpenShift cluster." \
+  description="This operator will deploy JanusGraph in OpenShift cluster."
+
+  # Required Licenses for Red Hat build service and scanner
+COPY licenses /licenses
+
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
