@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the graph v1alpha1 API group
-// +kubebuilder:object:generate=true
-// +groupName=graph.ibm.com
+//+kubebuilder:object:generate=true
+//+groupName=graph.example.com
 package v1alpha1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "graph.ibm.com", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "graph.example.com", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

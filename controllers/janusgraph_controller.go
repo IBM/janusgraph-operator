@@ -1,12 +1,9 @@
 /*
 Copyright 2021.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +19,7 @@ import (
 
 	"github.com/cloudflare/cfssl/log"
 	"github.com/go-logr/logr"
+	"github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,8 +30,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
-	graphv1alpha1 "github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
+	"github.com/example/janusgraph-operator/api/v1alpha1"
+	graphv1alpha1 "github.com/example/janusgraph-operator/api/v1alpha1"
 )
 
 // JanusgraphReconciler reconciles a Janusgraph object
@@ -43,11 +41,11 @@ type JanusgraphReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=graph.ibm.com,resources=janusgraphs/finalizers,verbs=update
-// +kubebuilder:rbac:groups=apps,resources=pods;deployments;statefulsets;services;,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods;services;,verbs=get;list;create;update;watch
+// +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=pods;deployments;statefulsets;services;persistentvolumeclaims;persistentvolumes;,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods;services;persistentvolumeclaims;persistentvolumes;,verbs=get;list;create;update;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -79,13 +77,18 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	var result *ctrl.Result
 	service := r.serviceForJanusgraph(janusgraph)
+
+	//ensureService returns nil once a service with name janusgraph is found in the given namespace
 	result, err = r.ensureService(ctx, janusgraph, service)
+
 	if result != nil {
 		return *result, err
 	}
 
 	statefulSetDep := r.statefulSetForJanusgraph(janusgraph)
-	result, err = r.ensureDeployment(ctx, janusgraph, statefulSetDep)
+
+	//ensureStatefulSet returns nil once a statefulset with name janusgraph is found in the given namespace
+	result, err = r.ensureStatefulSet(ctx, janusgraph, statefulSetDep)
 	if result != nil {
 		return *result, err
 	}
@@ -173,7 +176,7 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 					TargetPort: intstr.IntOrString{
 						IntVal: 8182,
 					},
-					// NodePort: 30184,
+					NodePort: 30181,
 				},
 			},
 			Selector: ls,
@@ -185,6 +188,8 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 
 // statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
+	log.Info("after statefulSetDep in reconcile ")
+
 	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
 	//fetch the size of the JanusGraph object from the custom resource
@@ -212,7 +217,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Image: "sanjeevghimire/janusgraph:" + version,
+							Image: "horeaporutiu/janusgraph:" + version,
 							Name:  "janusgraph",
 							Ports: []corev1.ContainerPort{
 								{
@@ -231,18 +236,15 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 	return statefulSet
 }
 
-func (r *JanusgraphReconciler) ensureDeployment(ctx context.Context,
-	janusgraph *graphv1alpha1.Janusgraph,
-	dep *appsv1.StatefulSet,
+//ensureStatefulSet checks for a resource of type StatefulSet with a given name in a given namespace and creates one if one does not exist
+//ensureStatefulSet returns nil, nil if it finds StatefulSet with name janusgraph in the given namespace
+func (r *JanusgraphReconciler) ensureStatefulSet(ctx context.Context, janusgraph *graphv1alpha1.Janusgraph, dep *appsv1.StatefulSet,
 ) (*ctrl.Result, error) {
-	// See if deployment already exists and create if it doesn't
 	// look for a resource of type StatefulSet
 	found := &appsv1.StatefulSet{}
 	// Check if the StatefulSet already exists in our namespace, if not create a new one
 	err := r.Get(ctx, types.NamespacedName{Name: janusgraph.Name, Namespace: janusgraph.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new StatefulSet
-		// dep := r.statefulSetForJanusgraph(janusgraph)
 		log.Info("Creating a new Statefulset", "StatefulSet.Namespace", dep.Namespace, "StatefulSet.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -251,33 +253,29 @@ func (r *JanusgraphReconciler) ensureDeployment(ctx context.Context,
 		}
 		// StatefulSet created successfully - return and requeue
 		log.Info("StatefulSet created, requeuing")
-		return &ctrl.Result{}, nil
+		return &ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get StatefulSet")
 		return &ctrl.Result{}, err
 	}
-
 	return nil, nil
 }
 
-func (r *JanusgraphReconciler) ensureService(ctx context.Context,
-	janusgraph *graphv1alpha1.Janusgraph,
-	srv *corev1.Service,
-) (*ctrl.Result, error) {
+//ensureService checks for a resource of type Service with a given name in a given namespace and creates one if one does not exist
+//ensureService returns nil, nil if it finds Service with name janusgraph in the given namespace
+func (r *JanusgraphReconciler) ensureService(ctx context.Context, janusgraph *graphv1alpha1.Janusgraph,
+	srv *corev1.Service) (*ctrl.Result, error) {
 	serviceFound := &corev1.Service{}
-	log.Info("Checking for service")
 	//check for Service resources in our namespace, and with a "JanusGraph" name prefix
 	err := r.Get(ctx, types.NamespacedName{Name: janusgraph.Name + "-service", Namespace: janusgraph.Namespace}, serviceFound)
 	if err != nil && errors.IsNotFound(err) {
-		//srv := r.serviceForJanusgraph(janusgraph)
-		log.Info("Creating a new headless service", "Service.Namespace", srv.Namespace, "Service.Name", srv.Name)
+
 		err = r.Create(ctx, srv)
 		if err != nil {
 			log.Error(err, "Failed to create new service", "service.Namespace", srv.Namespace, "service.Name", srv.Name)
 			return &ctrl.Result{}, err
 		}
 		// Service created successfully - return and requeue
-		log.Info("Janusgraph service created, requeuing")
 		return &ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get service")

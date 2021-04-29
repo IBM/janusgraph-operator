@@ -1,8 +1,8 @@
-apiVersion: graph.ibm.com/v1alpha1
+apiVersion: graph.example.com/v1alpha1
 kind: Janusgraph
 metadata:
   name: janusgraph-sample
 spec:
   # Add fields here
-  size: 5
-  version: latest
+  size: 4
+  version: latest 
