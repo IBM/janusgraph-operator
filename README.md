@@ -1,4 +1,6 @@
-## Advanced level
+# Kubernetes Operators Learning Path - Advanced Level
+
+**Note: If you want to see beginner and intermediate level tutorials, you can find them [here](https://github.ibm.com/TT-ISV-org/operator/blob/main/README.md).**
 
 1. <b>Develop and Deploy a Level 1 JanusGraph Operator on OpenShift Container Platform</b>: 
 In this tutorial, we will discuss how to develop and deploy a Level 1 operator on the OpenShift Container Platform. We will use the 
