@@ -108,19 +108,17 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	janusImage := "horeaporutiu/janusgraph"
+	janusImage := "horeaporutiu2/janusgraph"
 	version := janusgraph.Spec.Version
-	log.Info("obj", "*&found.Spec.Template.Spec.Containers[0].Image: ", *&found.Spec.Template.Spec.Containers[0].Image)
 	manifestImage := *&found.Spec.Template.Spec.Containers[0].Image
 	crImage := fmt.Sprintf("%s:%s", janusImage, version)
-	result1 := crImage == manifestImage
-	log.Info("result1", "result1: ", result1)
+	isSameVersion := crImage == manifestImage
 
-	if !result1 {
+	if !isSameVersion {
 		found.Spec.Template.Spec.Containers[0].Image = crImage
 		err = r.Update(ctx, found)
 		if err != nil {
-			log.Error(err, "Failed to update Deployment", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+			log.Error(err, "Failed to update version")
 			return ctrl.Result{}, err
 		}
 		// Spec updated - return and requeue
@@ -206,10 +204,7 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 
 // statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
-	log.Info("after statefulSetDep in reconcile ")
-
-	janusImage := "horeaporutiu/janusgraph"
-	// latestVersion := "0.5"
+	janusImage := "horeaporutiu2/janusgraph"
 
 	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
@@ -217,7 +212,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 	replicas := m.Spec.Size
 	//fetch the version of JanusGraph to install from the custom resource
 	version := m.Spec.Version
-	log.Info("idk", "idk", fmt.Sprintf("%s:%s", janusImage, version))
+	log.Info("JanusGraph Image and version", ":", fmt.Sprintf("%s:%s", janusImage, version))
 	//create StatefulSet
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
