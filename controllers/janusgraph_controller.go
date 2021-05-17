@@ -15,6 +15,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/cloudflare/cfssl/log"
@@ -107,6 +108,23 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
+	janusImage := "horeaporutiu2/janusgraph"
+	version := janusgraph.Spec.Version
+	manifestImage := *&found.Spec.Template.Spec.Containers[0].Image
+	crImage := fmt.Sprintf("%s:%s", janusImage, version)
+	isSameVersion := crImage == manifestImage
+
+	if !isSameVersion {
+		found.Spec.Template.Spec.Containers[0].Image = crImage
+		err = r.Update(ctx, found)
+		if err != nil {
+			log.Error(err, "Failed to update version")
+			return ctrl.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// look for resource of type PodList
 	podList := &corev1.PodList{}
 	//create filter to check for Pods only in our Namespace with the correct matching labels
@@ -175,7 +193,6 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 					TargetPort: intstr.IntOrString{
 						IntVal: 8182,
 					},
-					NodePort: 30181,
 				},
 			},
 			Selector: ls,
@@ -187,7 +204,7 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 
 // statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
-	log.Info("after statefulSetDep in reconcile ")
+	janusImage := "horeaporutiu2/janusgraph"
 
 	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
@@ -195,7 +212,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 	replicas := m.Spec.Size
 	//fetch the version of JanusGraph to install from the custom resource
 	version := m.Spec.Version
-
+	log.Info("JanusGraph Image and version", ":", fmt.Sprintf("%s:%s", janusImage, version))
 	//create StatefulSet
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,7 +233,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Image: "horeaporutiu/janusgraph:" + version,
+							Image: fmt.Sprintf("%s:%s", janusImage, version),
 							Name:  "janusgraph",
 							Ports: []corev1.ContainerPort{
 								{
