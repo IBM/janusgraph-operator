@@ -1,0 +1,218 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "graph.ibm.com/v1alpha1",
+          "kind": "Janusgraph",
+          "metadata": {
+            "name": "janusgraph-sample"
+          },
+          "spec": {
+            "size": 3,
+            "version": "latest"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: "Database"
+    description: A graph Database
+    containerImage: docker.io/sanjeevghimire/janusgraph-docker:latest
+    createdAt: 2021-04-27T11:08:00Z
+    support: Red Hat Connect Team
+    repository: https://github.ibm.com/TT-ISV-org/janusgraph-operator
+    operators.operatorframework.io/builder: operator-sdk-v1.6.1
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3    
+  name: janusgraph-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Janusgraph is the Schema for the janusgraphs API
+      displayName: Janusgraph
+      kind: Janusgraph
+      name: janusgraphs.graph.ibm.com
+      version: v1alpha1
+  description: Janusgraph Operator for OpenShift
+  displayName: Janusgraph Operator
+  icon:
+  - base64data: "iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAIAAAGBGCm0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAmFlJREFUeNpi/P//PwN9ARMD3QFdrZy56iCQZKRpwC7bejK3bfm7j18Z/gGtAqH/V2bTykqgTV9uH0qxYmFmYvj7j2HByT8hBswBc35+vzCbhRb22cV3TXF58lmUxWbiD0dV5lw7FqC3BDgZnx+eSJOA/fnrz8Ulhb//ogiyAb1mWmyqo0CT5MNvkIFmX93236aJkyH2AQGVA5ZZL+1QISeyyIE7//aum0GrTPL7z99aN3Q/1Gz+RcN8yaaf4arOjCa4a24hraxk1Ek9XMCBnpT+MLhaatHESibdtKMFHIwY4hMO/sZUTGnycU3tk/5z+3AeO9a8tvnyX+pY+fz1R//cKafP3F+bzdFgxojHkCBXIyxRQHxRoO5Tc+v6i025HCI8jP+I0AQsbrRjJpFpJTBpNHiyuaiRFvGu035+Oz+LnIBVtE47ks9BcgJmZPj++z859eWcluwlCexkxHfayl+bpuSQbKWkZZqmOOHAtOn8AWe/+gKm/jOYyTIZaMiSZiWLbvqaJOL8x4aURGf+4GRlzFrzK9mSZdbqQ8RauW7POUbt1EP5UJNYmBj6D/72m/0zaO7PyIU/zz7+x8vOyALTFzr/p4MarJD7D0obxj3fp4WC9LbM2Io9miEp1sQzHagOrdIBVugOU/78OD8dq85Lt56EFs249eDl4XxouQOskIHtDEgKZwAW5v/+21ipHl5Ujt3Kos5V/bN3HylHpMyslb8u7plJOGVqph4pAumymfDj/9XZxMQDNJPs27sXaB8wZQtwMFpP/OFub3JxTxpBzVzGWUD7mBgZrPp+XNnUSGxq/k8uuHzrSVBkOoNWin18F0kaGUdb6zS18vwWlPJ31+RcAs3wYmes4idWdgOlgGjv9GJkxUB0fFkHSvJZWuSEHMNoXOLB6XWT4GygNWimfX3/CkhCfalg7HLv9E4Ie+fEHGQHXtu/8sLWOceWtn1592JjS9SqSi9wMOTBFbx/dndLZ8KtI+vRfBzZs2dFuQec++TKUXYefkS+VLX03TejVMnUHcj++u65gXcqkPHn14+o3r0QBUD2jy8fgIyw9m1wU1aUuUMU+JQvWFsfrGYTiGbrvz/Qts/2vvT3T++Ed26HWvnn109RRR0g//axTe+f3g1qXPsTbPrNw+u0naOgRQYblirz398/cLaeewKWsokJGoqeRTMhQQJ0IkjozcOrEInTaye+uHUGyGDnEfj44gHQviOLmyFSQE9gmmibgChxTq+dgCa7pjYgsns39gLv8Pz60LbNQAY8GMFeXG8WWmgdUwNJnECpr+9eMLGwQkt8MENW1+bq3mUXt83l5BM2CwE1kZmYWFZWeDEyMkqoGoU0b4ApZgMKSmmYQswfGaUPQADR25dMwzZIV2w/TfPwBLbrbz8ElW0i3Ixvvv4X5OOilX3ARtqZUo5ff4CNHgY2Zob6Hb8aPdg+amYx0ciyIwUc6y/+tZoAatPuuP4v0YzVeeIPF0tN6vuPUSP1SDFKWQhs7fnP+fn65Czqj0Q4JHQfK+FA7oIBLfOay/jh5CyajHz8eH3n3382ZBFrWCOW+vYBm8VoH"
+    mediatype: "image/png"
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - persistentvolumeclaims
+          - persistentvolumes
+          - pods
+          - services
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          - persistentvolumes
+          - pods
+          - services
+          verbs:
+          - create
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - graph.ibm.com
+          resources:
+          - janusgraphs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - graph.ibm.com
+          resources:
+          - janusgraphs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - graph.ibm.com
+          resources:
+          - janusgraphs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: default
+      deployments:
+      - name: janusgraph-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources: {}
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: controller:latest
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 30Mi
+                  requests:
+                    cpu: 100m
+                    memory: 20Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - coordination.k8s.io
+          resources:
+          - configmaps
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: default
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - JanusGraph
+  - Operator
+  - Openshift
+  links:
+  - name: Janusgraph Operator
+    url: https://janusgraph-operator.domain
+  maturity: alpha
+  provider:
+    name: IBM
+  version: 0.0.1
