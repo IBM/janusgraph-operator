@@ -2,7 +2,7 @@
 set -x
 set -e
 
-img="sanjeevghimire/janusgraph-operator:latest"
+img="sanjeevghimire/janusgraph-operator:1.0.6"
 namespace="sanjeev-janus"
 
 cd config/manager

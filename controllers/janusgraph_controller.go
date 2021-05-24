@@ -19,7 +19,6 @@ import (
 
 	"github.com/cloudflare/cfssl/log"
 	"github.com/go-logr/logr"
-	"github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,8 +29,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/example/janusgraph-operator/api/v1alpha1"
-	graphv1alpha1 "github.com/example/janusgraph-operator/api/v1alpha1"
+	"github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
+	graphv1alpha1 "github.ibm.com/TT-ISV-org/janusgraph-operator/api/v1alpha1"
 )
 
 // JanusgraphReconciler reconciles a Janusgraph object
@@ -217,7 +216,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Image: "horeaporutiu/janusgraph:" + version,
+							Image: "sanjeevghimire/janusgraph:" + version,
 							Name:  "janusgraph",
 							Ports: []corev1.ContainerPort{
 								{
