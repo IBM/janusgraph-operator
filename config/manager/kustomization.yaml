@@ -14,4 +14,4 @@ namespace: sanjeev-janus
 images:
 - name: controller
   newName: sanjeevghimire/janusgraph-operator
-  newTag: 1.0.6
+  newTag: 1.0.8

@@ -2,7 +2,7 @@
 set -x
 set -e
 
-img="sanjeevghimire/janusgraph-operator:1.0.6"
+img="sanjeevghimire/janusgraph-operator:1.0.11"
 namespace="sanjeev-janus"
 
 cd config/manager
@@ -12,6 +12,7 @@ cd ../../
 cd config/default
 kustomize edit set namespace $namespace
 cd ../../
+
 
 make docker-build IMG=$img
 make docker-push IMG=$img

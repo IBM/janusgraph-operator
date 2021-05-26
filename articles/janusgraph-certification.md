@@ -198,7 +198,22 @@ Go to the preview link: https://operatorhub.io/preview and paste the content of 
 
 ![Operator hub preview](../images/operatorhub-preview.png)
 
-7. Pushing Operator bundle image for Certification test
+8. Update metadata bundle image dockerfile
+
+When you ran `make bundle`, it creates a `bundle.Dockerfile` for your metadata bundle image. There are some missing labels you need to add as below:
+
+```bash
+
+* LABEL com.redhat.openshift.versions="v4.5"
+This lists OpenShift versions, starting with 4.5, that your operator will support. See the section Managing OpenShift Versions for syntax and rules.
+* LABEL com.redhat.delivery.operator.bundle=true
+This just needs to be there
+* LABEL com.redhat.deliver.backport=true
+This is used to indicate support for OpenShift versions before 4.6. If you don't specify this flag, your operator won't be listed in 4.5 or earlier.
+* LABEL operators.operatorframework.io.bundle.channel.default.v1=
+```
+
+9. Pushing Operator bundle image for Certification test
 
 ### Push Operator bundle image manually
 
