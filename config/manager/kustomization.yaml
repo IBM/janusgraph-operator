@@ -13,5 +13,5 @@ kind: Kustomization
 namespace: sanjeev-janus
 images:
 - name: controller
-  newName: sanjeevghimire/janusgraph-operator
-  newTag: 1.0.8
+  newName: docker.io/sanjeevghimire/janusgraph-operator
+  newTag: 1.0.13

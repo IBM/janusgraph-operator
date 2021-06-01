@@ -2,8 +2,8 @@
 set -x
 set -e
 
-img="sanjeevghimire/janusgraph-operator:1.0.11"
-namespace="sanjeev-janus"
+export img="sanjeevghimire/janusgraph-operator:1.0.14"
+export namespace="sanjeev-janus"
 
 cd config/manager
 kustomize edit set namespace $namespace
@@ -16,6 +16,3 @@ cd ../../
 
 make docker-build IMG=$img
 make docker-push IMG=$img
-make deploy IMG=$img
-
-kubectl apply -f config/samples/graph_v1alpha1_janusgraph.yaml

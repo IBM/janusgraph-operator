@@ -7,11 +7,12 @@ In this tutorial, we will learn about how to prepare and certify your JanusGraph
 * Follow the prerequisite steps as mentioned in the [Program Prerequisites](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/prerequisites). These prerequisites are part of [Certification Workflow](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/certification-workflow).
 
 
-The certification of an operator is done in 2 stages as follows: 
-1. Operator image container certification
-2. Operator bundle image certification
+The certification of an operator is done in 3 stages as follows: 
+1. JanusGraph container image certification
+1. JanusGraph operator image certification
+1. JanusGraph operator bundle image certification
 
-## 1. Operator Image Container Certification
+## 1. JanusGraph container image certification
 ### Steps
 
 1. The base image that is used to build Janusgraph image should be supported by RedHat. In the Janusgraph docker project that you have cloned, find the `Dockerfile` and use the following RedHat supported `OpenJDK` image:
@@ -62,10 +63,15 @@ COPY licenses /licenses
 5. Build and deploy the operator image by running the following script:
 
 ```bash
-./build-and-deploy.sh
+$ ./build-images-ibm.sh -- if you have created a new file
+```
+OR
+
+```bash
+$ ./build-images.sh -- if you have modified file provided by Janusgraph
 ```
 
-6. From the RedHat Partner Connect portal, create the container application project by following the link:
+6. From the RedHat Partner Connect portal, create the container application project before uploading your image by following below link:
 
 https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/certify-your-operator/creating-an-operator-project/creating-container-project
 
@@ -94,20 +100,112 @@ Follow the steps to push container image manually:
 `docker login -u unused scan.connect.redhat.com -p <registry key>`
 * Find the image id of your container image using: `docker images |grep janusgraph-docker`
 * Tag your container image using: 
-`docker tag <image id> scan.connect.redhat.com/ospid-f7cc59be-157e-48ca-a817-7dc43c616c41/janusgraph-docker:1.0.6` . Make sure to use the correct URL thats given in `Push your image` page from RedHat Connect Portal.
+`docker tag <image id> scan.connect.redhat.com/<OSPID>/janusgraph-docker:<version>` . Make sure to use the correct URL thats given in `Push your image` page from RedHat Connect Portal.
+>Replace `image id` and `version` with respective values.
 * Push your container image for scanning using: 
-`docker push scan.connect.redhat.com/ospid-f7cc59be-157e-48ca-a817-7dc43c616c41/janusgraph-docker:1.0.6`
+`docker push scan.connect.redhat.com/<OSPID>/janusgraph-docker:<version>`
+>Replace `version` with the values used when tagging.
 
-Then you can see your images in RedHat Connect Portal scanning for any issues in your image. If no issues found you can see the image `Certification test` as being `passed`.
+>NOTE: You can find your project registry key and ospid by going to your project in RedHat Connect Portal and clicking `Push Images Manually` or you can copy the full URL instead of copying just the OSPID
+
+Then you can see your container image in RedHat Connect Portal scanning for any issues in your image. If no issues found you can see the image `Certification test` as being `passed`.
 
 ![Certification pass](../images/cert-pass.png)
 
 
-## 2. Operator bundle image certification
+## 2. JanusGraph operator image certification
+
+In previous step, you already created a container project and certified the container image. You can use the same project to certify the JanusGraph operator image. Before we create JanusGraph operator image few things needs to be changed:
+
+* Update Dockerfile to use RedHat supported base image in `Dockerfile`
+
+Replace:
+```bash
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+```
+
+With
+
+```bash
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+```
+
+* Add the following labels to `Dockerfile` right after base image:
+
+```bash
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+
+LABEL name="JanusGraph Operator Using Cassandra" \
+  maintainer="Sanjeev Ghimire:sanjeev.ghimire@ibm.com" \
+  vendor="IBM" \
+  version="v0.0.1" \
+  release="1" \
+  summary="This is a JanusGraph operator that ensures stateful deployment in an OpenShift cluster." \
+  description="This operator will deploy JanusGraph in OpenShift cluster."
+
+```
+
+* Add appropriate licenses to `licenses` folder, create licenses folder if you don't have one and update `Dockerfile` to copy the license directory:
+
+```bash
+# Use UBI image as base image
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+LABEL name="JanusGraph Operator Using Cassandra" \
+  maintainer="Sanjeev Ghimire:sanjeev.ghimire@ibm.com" \
+  vendor="IBM" \
+  version="v0.0.1" \
+  release="1" \
+  summary="This is a JanusGraph operator that ensures stateful deployment in an OpenShift cluster." \
+  description="This operator will deploy JanusGraph in OpenShift cluster."
+
+# Required Licenses for Red Hat build service and scanner
+COPY licenses /licenses
+```
+
+* Make sure to push the operator and test in your cluster by running:
+
+```bash
+./build-and-push-operator.sh
+
+./deploy-operator.sh
+
+```
+
+* Upload operator image to RedHat project registry:
+
+First find the image id of the operator image you built in last step. From terminal run: 
+
+```bash
+docker images | grep `janusgraph-operator`
+```
+
+Then, login to your project
+
+```bash
+docker login -u unused scan.connect.redhat.com -p <project registry key>
+
+docker tag <image id> scan.connect.redhat.com/<ospid-id>/janusgraph-operator:v0.0.1
+
+# Push the iamge to the RH registry
+$ docker push scan.connect.redhat.com/<ospid-id>/janusgraph-operator:v0.0.1
+
+```
+
+>NOTE: You can find your project registry key and ospid by going to your project in RedHat Connect Portal and clicking `Push Images Manually`
+
+* Go to `https://connect.redhat.com/project/<project_id>/images` to check the status of certification.
+
+It might take a while for the image to appear. You then need to wait for the certification process to finish.
+
+If "certification test" passed then continue to next step. Otherwise, check the scan logs for errors and update the image accordingly.
+
+## 3. JanusGraph operator bundle image certification
 
 ### Steps
 
-1. Create an operator bundle image project using teh following link:
+1. Create an operator bundle image project using the following link:
 https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/certify-your-operator/certify-your-operator-bundle-image/creating-operator-bundle-image-project
 
 2. Make sure the certification checklist are all completed and you see green check mark.
@@ -116,22 +214,19 @@ https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-contai
 
 >NOTE: The sales contact information and distribution approval from Redhat in the checklist items, which can be added later, are optional for container image certification.
 
-3. You must create metadata for your operator as part of the build process. These metadata files are the packaging format used by the Operator Lifecycle Manager (OLM) to deploy your operator onto OpenShift (OLM comes pre-installed in OpenShift 4.x).
-
-* Change the CRD to use v1beta1: The operator-sdk uses the latest version of CustomResourceDefinition, v1, by default. Older versions of OpenShift only support v1beta1, so if your operator is going to be listed on OCP 4.5 and earlier, you'll need to convert to the older format.
+3. Create the bundle by running the following script:
+Update the following before running the script:
 
 ```bash
-$ vi config/crd/bases/<your CRD filename>
+REGISTRY=docker.io
+USERNAME=sanjeevghimire
+REPOSITORY=janusgraph-operator
+VERSION=1.0.13
 ```
-and change line
-`apiVersion: apiextensions.k8s.io/v1` 
-to
-`apiVersion: apiextensions.k8s.io/v1beta1`
-
-* Create the bundle: SDK projects are scaffolded with a Makefile containing the bundle recipe by default, which wraps generate kustomize manifests, generate bundle, and other related commands. Run: 
+Then run:
 
 ```bash
-make bundle
+./make-bundle.sh
 ```
 
 which asks series of questions, whose answers will be added to the generated ClusterServiceVersion (CSV). The questions are:
@@ -146,74 +241,53 @@ which asks series of questions, whose answers will be added to the generated Clu
 
 ```
 
+The make bundle command used above, automates several tasks, including running the following operator-sdk subcommands in order:
+
+```bash
+generate kustomize manifests
+
+generate bundle
+
+bundle validate
+```
+
 Once this process is done, you will see a folder `bundle` in your project root directory which contains CSV, copy of CRDs, and generated metadata in the bundle format.
 
 To learn in detail about the bundle process you can go to this [link](https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/creating-the-metadata-bundle).
 
-4. The generated ClusterServiceVersion (CSV) file needs some additional information as below:
+4. Make sure following files are updated: 
+Update `bundle/manifests/janusgraph-operator.clusterserviceversion.yaml` by:
 
-Fields to add under metadata.annotations are: 
+Replacing: 
 
-* `categories` - Comma separated string of these applicable category names 
-* `description` - Short description of the operator
-* `containerImage` - The full location (registry, repository, name and tag) of the operator image
-* `createdAt` - A rough (to the day) timestamp of when the operator image was created
-* `support` - Name of the supporting vendor (eg: ExampleCo)
-* `repository` -  URL of the operator's source code repository (this field is optional)
+`base64data: ""` with a base64 image of JanusGraph logo.
 
-Fields to adjust under spec are:  
-
-* `description` - Long description of the operator's owned customresourcedefinitions in Markdown format. Usage instructions and relevant info for the user goes here
-* `icon.base64data` - A base64 encoded PNG, JPEG or SVG image will need to be added
-* `icon.mediatype` - The corresponding MIME type of the image (eg: image/png)
-
-For the final changes for Janusgraph Operator ClusterServiceVersion you can check [janusgraph-operator.clusterserviceversion.yaml](../bundle/manifests/janusgraph-operator.clusterserviceversion.yaml)
+`mediatype: ""` With: `mediatype: "image/png"`
 
 
-5. Verifying your metadata bundle can be done using `Operator SDK`. Run the following:
+Add the following line to `bundle/metadata/annotations.yaml`:
 
+`operators.operatorframework.io.bundle.channel.default.v1: alpha`
+
+
+Add the following labels to bundle.Dockerfile:
+```yaml
+LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha
+LABEL com.redhat.openshift.versions="v4.6"
+LABEL com.redhat.delivery.operator.bundle=true
+```
+
+5. To build the bundle image and push to registry, run the following script, make sure to replace the following with appropriate values:
 ```bash
-$ operator-sdk bundle validate ./bundle
-
-INFO[0001] Found annotations file                        bundle-dir=bundle container-tool=docker
-INFO[0001] Could not find optional dependencies file     bundle-dir=bundle container-tool=docker
-INFO[0001] All validation tests have completed successfully
+export USERNAME="sanjeevghimire"
+export BUNDLE_IMG="docker.io/$USERNAME/janusgraph-operator-bundle:v0.0.1"
 ```
 
 ```bash
-$ operator-sdk bundle validate ./bundle --select-optional suite=operatorframework
-
-INFO[0000] Found annotations file                        bundle-dir=bundle container-tool=docker
-INFO[0000] Could not find optional dependencies file     bundle-dir=bundle container-tool=docker
-WARN[0000] Warning: Value : (janusgraph-operator-v1.0.2) csv.metadata.Name janusgraph-operator-v1.0.2 is not following the recommended naming convention: <operator-name>.v<semver> e.g. memcached-operator.v0.0.1
-INFO[0000] All validation tests have completed successfully
+./build-and-push-operator-bundle.sh
 
 ```
-
-6. Previewing your CSV on OperatorHub.io
-
-Go to the preview link: https://operatorhub.io/preview and paste the content of [janusgraph-operator.clusterserviceversion.yaml](../bundle/manifests/janusgraph-operator.clusterserviceversion.yaml) and you should see the following preview:
-
-![CSV yaml preview](../images/csvyaml-preview.png)
-
-![Operator hub preview](../images/operatorhub-preview.png)
-
-8. Update metadata bundle image dockerfile
-
-When you ran `make bundle`, it creates a `bundle.Dockerfile` for your metadata bundle image. There are some missing labels you need to add as below:
-
-```bash
-
-* LABEL com.redhat.openshift.versions="v4.5"
-This lists OpenShift versions, starting with 4.5, that your operator will support. See the section Managing OpenShift Versions for syntax and rules.
-* LABEL com.redhat.delivery.operator.bundle=true
-This just needs to be there
-* LABEL com.redhat.deliver.backport=true
-This is used to indicate support for OpenShift versions before 4.6. If you don't specify this flag, your operator won't be listed in 4.5 or earlier.
-* LABEL operators.operatorframework.io.bundle.channel.default.v1=
-```
-
-9. Pushing Operator bundle image for Certification test
+6. Pushing Operator bundle image for Certification test
 
 ### Push Operator bundle image manually
 
@@ -230,17 +304,26 @@ which brings to this page:
 Follow the steps to push container image manually:
 * Login to the RedHat Connect Registry: 
 `docker login -u unused scan.connect.redhat.com -p <registry key>`
-* Find the image id of your container image using: `docker images |grep janusgraph-operator`
+* Find the image id of your bundle image using: `docker images |grep janusgraph-operator-bundle`
 * Tag your container image using: 
-`docker tag <image id> scan.connect.redhat.com/ospid-f7cc59be-157e-48ca-a817-7dc43c616c41/janusgraph-operator:1.0.6` . Make sure to use the correct URL thats given in `Push your image` page from RedHat Connect Portal.
+`docker tag <image id> scan.connect.redhat.com/<OSPID>/janusgraph-operator-bundle:<version>` . Make sure to use the correct URL thats given in `Push your image` page from RedHat Connect Portal.
 * Push your container image for scanning using: 
-`docker push scan.connect.redhat.com/ospid-f7cc59be-157e-48ca-a817-7dc43c616c41/janusgraph-operator:1.0.6`
+`docker push scan.connect.redhat.com/<OSPID>/janusgraph-operator-bundle:<version>`
+
+
+>NOTE: You can find your project registry key and ospid by going to your project in RedHat Connect Portal and clicking `Push Images Manually` or you can copy the full URL instead of copying just the OSPID
 
 Then you can see your images in RedHat Connect Portal scanning for any issues in your image. If no issues found, you can see the image `Certification test` as being `passed`.
 
-![Certification pass](../images/cert-pass.png)
+![Bundle Certification](../images/bundle-certification.png)
+
+7. Previewing your CSV on OperatorHub.io
+
+Go to the preview link: https://operatorhub.io/preview and paste the content of [janusgraph-operator.clusterserviceversion.yaml](../bundle/manifests/janusgraph-operator.clusterserviceversion.yaml) and you should see the following preview:
+
+![CSV yaml preview](../images/csvyaml-preview.png)
+
+![Operator hub preview](../images/operatorhub-preview.png)
 
 
-
-
-
+Finally, you have successfully certified your operator. Now you can publish your operator in RedHat market place and operatorshub.io.

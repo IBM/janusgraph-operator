@@ -2,31 +2,12 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: |-
-      [
-        {
-          "apiVersion": "graph.ibm.com/v1alpha1",
-          "kind": "Janusgraph",
-          "metadata": {
-            "name": "janusgraph-sample"
-          },
-          "spec": {
-            "size": 3,
-            "version": "latest"
-          }
-        }
-      ]
+    alm-examples: '[]'
     capabilities: Basic Install
-    categories: "Database"
-    description: A graph Database
-    containerImage: docker.io/sanjeevghimire/janusgraph:1.0.0
-    createdAt: 2021-04-27T11:08:00Z
-    support: Red Hat Connect Team
-    repository: https://github.ibm.com/TT-ISV-org/janusgraph-operator
     operators.operatorframework.io/builder: operator-sdk-v1.6.1
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3    
-  name: janusgraph-operator-v1.0.2
-  namespace: sanjeev-janus
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: janusgraph-operator.v0.0.1
+  namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -953,7 +934,7 @@ xendHVNwAAAABJRU5ErkJggg=="
           - update
           - watch
         - apiGroups:
-          - graph.ibm.com
+          - graph.example.com
           resources:
           - janusgraphs
           verbs:
@@ -965,13 +946,13 @@ xendHVNwAAAABJRU5ErkJggg=="
           - update
           - watch
         - apiGroups:
-          - graph.ibm.com
+          - graph.example.com
           resources:
           - janusgraphs/finalizers
           verbs:
           - update
         - apiGroups:
-          - graph.ibm.com
+          - graph.example.com
           resources:
           - janusgraphs/status
           verbs:
@@ -1022,7 +1003,7 @@ xendHVNwAAAABJRU5ErkJggg=="
                 - --leader-elect
                 command:
                 - /manager
-                image: sanjeevghimire/janusgraph-operator:1.0.11
+                image: docker.io/sanjeevghimire/janusgraph-operator:1.0.13
                 livenessProbe:
                   httpGet:
                     path: /healthz
