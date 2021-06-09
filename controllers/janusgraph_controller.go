@@ -41,6 +41,10 @@ type JanusgraphReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+const (
+	JANUS_IMAGE = "sanjeevghimire/janusgraph"
+)
+
 // +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=graph.example.com,resources=janusgraphs/finalizers,verbs=update
@@ -108,10 +112,10 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	janusImage := "horeaporutiu2/janusgraph"
+	// version upgrade/downgrade
 	version := janusgraph.Spec.Version
 	manifestImage := *&found.Spec.Template.Spec.Containers[0].Image
-	crImage := fmt.Sprintf("%s:%s", janusImage, version)
+	crImage := fmt.Sprintf("%s:%s", JANUS_IMAGE, version)
 	isSameVersion := crImage == manifestImage
 
 	if !isSameVersion {
@@ -204,7 +208,6 @@ func (r *JanusgraphReconciler) serviceForJanusgraph(m *v1alpha1.Janusgraph) *cor
 
 // statefulSetForJanusgraph returns a StatefulSet for our JanusGraph object
 func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) *appsv1.StatefulSet {
-	janusImage := "horeaporutiu2/janusgraph"
 
 	//fetch labels
 	ls := labelsForJanusgraph(m.Name)
@@ -212,7 +215,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 	replicas := m.Spec.Size
 	//fetch the version of JanusGraph to install from the custom resource
 	version := m.Spec.Version
-	log.Info("JanusGraph Image and version", ":", fmt.Sprintf("%s:%s", janusImage, version))
+	log.Info("JanusGraph Image and version", ":", fmt.Sprintf("%s:%s", JANUS_IMAGE, version))
 	//create StatefulSet
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -233,7 +236,7 @@ func (r *JanusgraphReconciler) statefulSetForJanusgraph(m *v1alpha1.Janusgraph) 
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Image: fmt.Sprintf("%s:%s", janusImage, version),
+							Image: fmt.Sprintf("%s:%s", JANUS_IMAGE, version),
 							Name:  "janusgraph",
 							Ports: []corev1.ContainerPort{
 								{

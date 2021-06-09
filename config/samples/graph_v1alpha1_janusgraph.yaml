@@ -4,5 +4,5 @@ metadata:
   name: janusgraph-sample
 spec:
   # Add fields here
-  size: 4
-  version: latest 
+  size: 3
+  version: 1.0.1

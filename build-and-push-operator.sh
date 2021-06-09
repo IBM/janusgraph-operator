@@ -2,8 +2,12 @@
 set -x
 set -e
 
-export img="sanjeevghimire/janusgraph-operator:1.0.14"
+export img="sanjeevghimire/janusgraph-operator:1.0.16"
 export namespace="sanjeev-janus"
+
+make generate
+make manifests
+make install
 
 cd config/manager
 kustomize edit set namespace $namespace
