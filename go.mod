@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/cloudflare/cfssl v1.5.0
+	github.com/coreos/go-semver v0.3.0
 	github.com/go-logr/logr v0.3.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
