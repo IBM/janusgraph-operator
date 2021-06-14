@@ -28,7 +28,7 @@ This will enable use to replicate our data across multiple Pods, and give us hig
 * You've read [Deep Dive into Memcached Operator Code](https://github.ibm.com/TT-ISV-org/operator/blob/main/INTERMEDIATE_TUTORIAL.md)
 
 ## Steps
-0. [Overview](#0-overview)
+1. [Overview](#0-overview)
 1. [Create the JanusGraph project and API ](#1-Create-the-JanusGraph-project-and-API )
 1. [Update the JanusGraph API](#2-Update-the-janusgraph-API)
 1. [Controller Logic: Creating a Service](#3-controller-logic-creating-a-service)
