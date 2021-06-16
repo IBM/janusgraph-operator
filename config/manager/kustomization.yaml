@@ -10,8 +10,8 @@ configMapGenerator:
   name: manager-config
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: sanjeev-janus
+namespace: sanjeev-janus-demo
 images:
 - name: controller
   newName: sanjeevghimire/janusgraph-operator
-  newTag: 1.0.16
+  newTag: 1.0.21

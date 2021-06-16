@@ -2,10 +2,8 @@
 set -x
 set -e
 
-img="sanjeevghimire/janusgraph-operator:1.0.16"
-namespace="sanjeev-janus"
-
-make undeploy
+img="sanjeevghimire/janusgraph-operator:1.0.21"
+namespace="sanjeev-janus-demo"
 
 make deploy IMG=$img
 

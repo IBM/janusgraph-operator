@@ -122,6 +122,7 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	versionSplit := strings.Split(manifestImage, ":")
 	currentVersion := versionSplit[1]
+	log.Info("Current version is", ":", currentVersion)
 
 	// only version with  x.x.x format will work
 	// ex: 1.1.1 or 1.1 or 2
@@ -130,12 +131,14 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+	log.Info("Desired Version ", ":", vA.String())
 	vB, err := semver.NewVersion(currentVersion)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	if vB.LessThan(*vA) {
+		log.Info("Uprading to new version", ":", vA.String())
 		found.Spec.Template.Spec.Containers[0].Image = crImage
 		err = r.Update(ctx, found)
 		if err != nil {
@@ -144,6 +147,8 @@ func (r *JanusgraphReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		// Spec updated - return and requeue
 		return ctrl.Result{Requeue: true}, nil
+	} else {
+		log.Info("Not Upgrading : ", "Already at latest version", currentVersion)
 	}
 
 	// look for resource of type PodList

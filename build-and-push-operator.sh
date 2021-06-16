@@ -2,8 +2,8 @@
 set -x
 set -e
 
-export img="sanjeevghimire/janusgraph-operator:1.0.16"
-export namespace="sanjeev-janus"
+export img="sanjeevghimire/janusgraph-operator:1.0.21"
+export namespace="sanjeev-janus-demo"
 
 make generate
 make manifests
