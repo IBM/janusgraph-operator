@@ -1,27 +1,18 @@
 # Certifying Janusgraph Image
 
-In this tutorial, we will learn about how to prepare and certify your JanusGraph container so that you could deploy Janusgraph Operator to RedHat OpenShift.
+In this tutorial, we will learn about how to prepare and certify your JanusGraph Operator so that you could deploy Janusgraph Operator to RedHat OpenShift market place or at https://operatorhub.io.
 
-## Requirements for certification
-
-The <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#1-build-your-uai-from-a-ubi" target="_blank">Design, build, and deploy universal application image</a> learning path details key elements you need to include in your image in order for it to pass Red Hat certification. These include:
-
-* <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#1-build-your-uai-from-a-ubi" target="_blank">Choose a certified image, preferably a UBI</a> to ensure your image is from a secure registry and certified on its own.
-* <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#3-embed-identifying-information-inside-your-image" target="_blank">Embed identifying information into your image</a> so that your users can know exactly what's included in the image.
-* <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#4-add-license-information-to-an-image" target="blank">Add appropriate license information</a> that clearly define the licenses that govern the use of the software it contains. This information should be an immutable part of the image that cannot be separated.
-* <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#2-design-the-image-to-run-as-a-non-root-user-id">Design the image to run as a non-root user ID</a> so that if the process breaks out of the container, its access on the host machine is much more limited.
-* <a href="https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#5-build-your-image-with-the-latest-security-updates" target="_blank">Build your image with the latest security updates</a> to ensure your image includes the additional dependencies or packages that the image requires. Refer to Red Hat's documentation for information on how to choose packages and dependencies that are safe:
-    * <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/building_running_and_managing_containers/index#using-appstream-runtime-images_adding-software-to-a-running-ubi-container" target="_blank" rel="noopener noreferrer nofollow">Using Application Stream runtime images</a>
-    * <a href="https://www.redhat.com/sysadmin/rpm-gpg-verify-packages" target="_blank" rel="noopener noreferrer nofollow">How to verify Linux packages before installing them</a>
+If you want to learn more about operator certification, you can click the link [here](https://github.ibm.com/TT-ISV-org/operator/blob/main/certification/cert-info.md).
 
 # Prerequisites
 
 * Follow the prerequisite steps as mentioned in the [Program Prerequisites](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/prerequisites). These prerequisites are part of [Certification Workflow](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/certification-workflow).
 
 The certification of an operator is done in 3 stages as follows: 
-1. JanusGraph container image certification
-1. JanusGraph operator image certification
-1. JanusGraph operator bundle image certification
+1. JanusGraph container image certification.
+1. JanusGraph operator image certification.
+1. JanusGraph operator bundle image certification.
+1. Preview in OperatorHub (Optional).
 
 ## 1. JanusGraph container image certification
 ### Steps
@@ -36,17 +27,21 @@ FROM registry.access.redhat.com/ubi8/openjdk-8:1.3-12
 
 2. The JanusGraph image should run as `non-root` user but part of the `root` group. To do this, we have added the following changes to the existing Janusgraph `Dockerfile`
 
-* Add a non-root user `9999` and assign that user the folders
+* Comment this section out as the user 999 is already part of the base image and since command `apt-get` is not part of the base image we replace that with `dnf`.
 ```bash
-RUN groupadd -r janusgraph --gid=9999 && \
-    useradd -r -g janusgraph --uid=9999 -d ${JANUS_DATA_DIR} janusgraph && \
+# RUN groupadd -r janusgraph --gid=999 && \
+#     useradd -r -g janusgraph --uid=999 -d ${JANUS_DATA_DIR} janusgraph && \
+#     apt-get update -y && \
+#     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends krb5-user && \
+#     rm -rf /var/lib/apt/lists/*
+
+RUN dnf -y upgrade-minimal --security --sec-severity=Important --sec-severity=Critical && \
+    rm -rf /var/lib/apt/lists/*
 ```
 
 * Change the group of the folders to `root` group.
 ```bash
-chown -R 9999:9999 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
-
-chgrp -R 0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
+chown -R 999:0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
 
 chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR}
 
@@ -179,10 +174,16 @@ ENV JANUS_VERSION=${JANUS_VERSION} \
 
 USER root
 
-##2. Change the group of the folders to root group.
-RUN useradd -r -g janusgraph --uid=9999 -d ${JANUS_DATA_DIR} janusgraph && \    
-    # dnf -y upgrade && \
-    dnf -y upgrade-minimal --security --sec-severity=Important --sec-severity=Critical && \
+## Note that this section is commented out because the base image used already has user 999
+# and also the  apt-get command is not available in the base image.
+# RUN groupadd -r janusgraph --gid=999 && \
+#     useradd -r -g janusgraph --uid=999 -d ${JANUS_DATA_DIR} janusgraph && \
+#     apt-get update -y && \
+#     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends krb5-user && \
+#     rm -rf /var/lib/apt/lists/*
+
+
+RUN dnf -y upgrade-minimal --security --sec-severity=Important --sec-severity=Critical && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -199,12 +200,10 @@ RUN chmod 755 /usr/local/bin/docker-entrypoint.sh && \
     chmod 755 /usr/local/bin/load-initdb.sh && \
     chmod 755 /usr/bin/yq && \
     mkdir -p ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
-    chown -R 9999:9999 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
-    chgrp -R 0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
-    chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR}
-
-RUN chmod u+x /opt/janusgraph/bin/gremlin.sh
-RUN chmod u+x /opt/janusgraph/conf/remote.yaml
+    chown -R 999:0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \    
+    chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
+    chmod u+x /opt/janusgraph/bin/gremlin.sh && \
+    chmod u+x /opt/janusgraph/conf/remote.yaml
 
 EXPOSE 8182
 
@@ -462,7 +461,8 @@ Then you can see your images in RedHat Connect Portal scanning for any issues in
 
 ![Bundle Certification](../images/bundle-certification.png)
 
-7. Previewing your CSV on OperatorHub.io
+
+### 4. Preview in OperatorHub (Optional)
 
 Go to the preview link: https://operatorhub.io/preview and paste the content of [janusgraph-operator.clusterserviceversion.yaml](../bundle/manifests/janusgraph-operator.clusterserviceversion.yaml) and you should see the following preview:
 
@@ -470,5 +470,8 @@ Go to the preview link: https://operatorhub.io/preview and paste the content of 
 
 ![Operator hub preview](../images/operatorhub-preview.png)
 
-
 Finally, you have successfully certified your operator. Now you can publish your operator in RedHat market place and operatorshub.io.
+
+## Next Steps
+
+At this point, you have successfuly certified your operator image and bundle. The next step is to publish the JanusGraph operator at RedHat Market place or operatorhubs.io.
