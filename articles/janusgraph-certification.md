@@ -234,7 +234,7 @@ Make sure the certification checklist are all completed and you see green check 
 
 >NOTE: The sales contact information and distribution approval from Redhat in the checklist items, which can be added later, are optional for container image certification.
 
-8. Now, you can push your container image for certification. It can be done manually from your local build or configure the build service in `RedHat Connect Portal`.
+Now, you can push your container image for certification. It can be done manually from your local build or configure the build service in `RedHat Connect Portal`.
 
 
 ### Push Container Image manually
