@@ -27,29 +27,50 @@ To upgrade the current version of the operand, which in this case is Janusgraph,
 
 The operator should be capable of upgrading the version to the desired version higher than the current one. To do so, following cases should be implemented in the operator's controller.
 
-* Check to see if the current version is lower than the desired version.
-* Update the image of the container with the newer version
+1. Get the desired version from the Custom Resource (CR)
+1. Get the current version from the container specification
+1. Check to see if the container image needs upgrade
+1. Upgrade container image if current version is less than desired version
 
 Lets look at the code implementation.
 >Note: check the comments to see what the code is doing.
 
 ```go
-    //1. get version of the CR
-    version := janusgraph.Spec.Version
-    //2. get version of the container image
-	manifestImage := *&found.Spec.Template.Spec.Containers[0].Image
-	crImage := fmt.Sprintf("%s:%s", JANUS_IMAGE, version)
-    //3. Check to see if its upgradable
-	isSameVersion := crImage == manifestImage
-    //4. Upgrade the container image
-	if !isSameVersion {
+  // version upgrade/downgrade
+  //1. Get the desired version from the Custom Resource (CR)
+	desiredVersion := janusgraph.Spec.Version	
+	crImage := fmt.Sprintf("%s:%s", JANUS_IMAGE, desiredVersion)
+  //2. Get the current version from the container specification
+  manifestImage := *&found.Spec.Template.Spec.Containers[0].Image
+	versionSplit := strings.Split(manifestImage, ":")
+	currentVersion := versionSplit[1]
+	log.Info("Current version is", ":", currentVersion)
+
+  //3. Check to see if the container image needs upgrade
+	// only version with  x.x.x format will work
+	// ex: 1.1.1 or 1.1 or 2
+	vA, err := semver.NewVersion(desiredVersion)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	log.Info("Desired Version ", ":", vA.String())
+	vB, err := semver.NewVersion(currentVersion)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+  //4. Upgrade container image if current version is less than desired version
+	if vB.LessThan(*vA) {
+		log.Info("Uprading to new version", ":", vA.String())
 		found.Spec.Template.Spec.Containers[0].Image = crImage
 		err = r.Update(ctx, found)
 		if err != nil {
 			log.Error(err, "Failed to update version")
 			return ctrl.Result{}, err
 		}
+		// Spec updated - return and requeue
 		return ctrl.Result{Requeue: true}, nil
+	} else {
+		log.Info("Not Upgrading : ", "Already at latest version", currentVersion)
 	}
 
 ```
@@ -74,7 +95,7 @@ spec:
 
 ```
 
-Once the version is changed to the desire version, then you can apply to this to your cluster.
+Once the version is changed to the desired version, then you can apply the CR to your cluster.
 
 ```bash
 oc apply -f config/samples/graph_v1alpha1_janusgraph.yaml
