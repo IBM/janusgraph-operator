@@ -10,6 +10,8 @@ rules:
   - apps
   resources:
   - deployments
+  - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - services
   - statefulsets
@@ -24,6 +26,8 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - persistentvolumeclaims
+  - persistentvolumes
   - pods
   - services
   verbs:
@@ -33,7 +37,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - graph.ibm.com
+  - graph.example.com
   resources:
   - janusgraphs
   verbs:
@@ -45,13 +49,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - graph.ibm.com
+  - graph.example.com
   resources:
   - janusgraphs/finalizers
   verbs:
   - update
 - apiGroups:
-  - graph.ibm.com
+  - graph.example.com
   resources:
   - janusgraphs/status
   verbs:
