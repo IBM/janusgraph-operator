@@ -6,9 +6,9 @@ If you want to learn more about operator certification, you can click the link [
 
 # Prerequisites
 
-* Follow the prerequisite steps as mentioned in the [Program Prerequisites](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/prerequisites). These prerequisites are part of [Certification Workflow](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/certification-workflow).
+Follow the prerequisite steps as mentioned in the [Program Prerequisites](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/prerequisites). These prerequisites are part of [Certification Workflow](https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/certification-workflow).
 
-The certification of an operator is done in 3 stages as follows: 
+Following steps are required to certify JanusGraph operator: 
 1. JanusGraph container image certification.
 1. JanusGraph operator image certification.
 1. JanusGraph operator bundle image certification.
@@ -25,7 +25,7 @@ FROM registry.access.redhat.com/ubi8/openjdk-8:1.3-12
 
 > NOTE: There are higher versions of OpenJDK available and can be used as well.
 
-2. The JanusGraph image should run as `non-root` user but part of the `root` group. To do this, we have added the following changes to the existing Janusgraph `Dockerfile`
+2. The JanusGraph image should run as `non-root` user but part of the `root` group. To do this, we have added the following changes to the existing Janusgraph `Dockerfile`.
 
 * Comment this section out as the user 999 is already part of the base image and since command `apt-get` is not part of the base image we replace that with `dnf`.
 ```bash
@@ -47,7 +47,7 @@ chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_
 
 ```
 
-3. Add following labels to the Janusgraph Operator Dockerfile.
+3. Add following labels to the Janusgraph Operator Dockerfile. These labels are required labels that will be checked part of certification process.
 
 ```bash
   LABEL name="JanusGraph Operator Using Cassandra" \
