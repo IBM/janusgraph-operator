@@ -15,7 +15,11 @@ Following steps are required to certify JanusGraph operator:
 1. Preview in OperatorHub (Optional).
 
 ## 1. JanusGraph container image certification
-### Steps
+
+Following are the steps to certify container image. At the end of the steps there is a complete Dockerfile with all the changes required for certification.
+### Dockerfile changes for container image certification
+
+The following steps from 1-4 are Dockerfile changes that is required for certification.
 
 1. The base image that is used to build Janusgraph image should be supported by RedHat. In the Janusgraph docker project that you have cloned, find the `Dockerfile` and use the following RedHat supported `OpenJDK` image:
 
@@ -65,29 +69,6 @@ chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_
   # Required Licenses for Red Hat build service and scanner
 COPY licenses /licenses
 ```
-
-5. Build and deploy the operator image by running the following script:
-
-```bash
-$ ./build-images-ibm.sh -- if you have created a new file
-```
-OR
-
-```bash
-$ ./build-images.sh -- if you have modified file provided by Janusgraph
-```
-
-6. From the RedHat Partner Connect portal, create the container application project before uploading your image by following below link:
-
-https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/certify-your-operator/creating-an-operator-project/creating-container-project
-
-7. Make sure the certification checklist are all completed and you see green check mark.
-
-![container image checklist](../images/ccp-checklist.png)
-
->NOTE: The sales contact information and distribution approval from Redhat in the checklist items, which can be added later, are optional for container image certification.
-
-8. Now, you can push your container image for certification. It can be done manually from your local build or configure the build service in `RedHat Connect Portal`.
 
 Here is the complete Dockerfile for JanusGraph (container image) with all the changes mentioned above for it to be certified:
 
@@ -227,6 +208,35 @@ LABEL org.opencontainers.image.title="JanusGraph Docker Image" \
 
 ```
 
+
+### Build and Deploy
+
+Before you push your images for scanning, it is recommended to test the container image. To build and deploy the container image, run the following script:
+
+```bash
+$ ./build-images-ibm.sh -- if you have created a new file
+```
+OR
+
+```bash
+$ ./build-images.sh -- if you have modified file provided by Janusgraph
+```
+
+### Create container application project in RedHat Connect Portal
+
+From the RedHat Partner Connect portal, create the container application project before uploading your image by following below link:
+
+https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/certify-your-operator/creating-an-operator-project/creating-container-project
+
+Make sure the certification checklist are all completed and you see green check mark.
+
+![container image checklist](../images/ccp-checklist.png)
+
+>NOTE: The sales contact information and distribution approval from Redhat in the checklist items, which can be added later, are optional for container image certification.
+
+Now, you can push your container image for certification. It can be done manually from your local build or configure the build service in `RedHat Connect Portal`.
+
+
 ### Push Container Image manually
 
 You can follow the instructions from the RedHat Connect Portal, by clicking the `Push Images Manually` link from your project page.
@@ -347,7 +357,7 @@ If "certification test" passed then continue to next step. Otherwise, check the 
 
 ## 3. JanusGraph operator bundle image certification
 
-### Steps
+### Steps to create operator bundle and submit for certification
 
 1. Create an operator bundle image project using the following link:
 https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/certify-your-operator/certify-your-operator-bundle-image/creating-operator-bundle-image-project
