@@ -1,4 +1,4 @@
-# LEVEL 1 : JanusGraph Operator using Cassandra - Part 2
+# Develop and deploy a Level 1 JanusGraph Operator using Cassandra
 
 In this tutorial, we will learn how to develop and deploy a Level 1 operator on the OpenShift Container Platform. We will be creating an operator for Janusgraph which will use Cassandra as an storage backend. Cassandra is a distributed database platform which can scale and be highly available, and can perform really well on any commodity hardware or cloud infrastructure. To learn more about Cassandra you can read more [here](https://casandra.apache.org).
 
