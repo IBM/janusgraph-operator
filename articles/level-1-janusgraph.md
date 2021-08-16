@@ -9,7 +9,7 @@ When you have completed this tutorial, you will understand how to:
 * Deploy Cassandra as back-end storage.
 * Create a JanusGraph image that runs well in OpenShift, not just Kubernetes.
 * Deploy a JanusGraph operator to an OpenShift cluster.
-* Scale a JanusGraph instance up or down by modifying and applying the Custom Resource (CR) to an OpenShift cluster.
+* Scale a JanusGraph instance up or down by modifying and applying the custom resource (CR) to an OpenShift cluster.
 
 _**Note:** Cassandra deployment is not part of this tutorial. We assume that Cassandra is already available, whether its deployed from operator hub or as a stand-alone deployment._
 
