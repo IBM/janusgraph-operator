@@ -1,13 +1,13 @@
-# Develop and deploy a Level 1 JanusGraph Operator using Apache Cassandra
+# Develop and deploy a level 1 JanusGraph operator using Apache Cassandra
 
-## SUBTITLE: And learn how to scale the JanusGraph app up or down using the Custom Resource
+## SUBTITLE: Deploy an instance of the JanusGraph database simply by creating a custom resource
 
 This tutorial shows you how to develop and deploy a level 1 operator on the Red Hat OpenShift Container Platform. You will create an operator for JanusGraph that uses [Apache Cassandra](https://cassandra.apache.org/) as a storage back end. Cassandra is a distributed database platform that can scale and be highly available, and can perform really well on any commodity hardware or cloud infrastructure.
 
 When you have completed this tutorial, you will understand how to:
 
 * Deploy Cassandra as back-end storage.
-* Generate JanusGraph image customize to OpenShift cluster.  [REPHRASE??]
+* Create a JanusGraph image that runs well in OpenShift, not just Kubernetes.
 * Deploy a JanusGraph operator to an OpenShift cluster.
 * Scale a JanusGraph instance up or down by modifying and applying the Custom Resource (CR) to an OpenShift cluster.
 
@@ -15,9 +15,9 @@ _**Note:** Cassandra deployment is not part of this tutorial. We assume that Cas
 
 A level 1 JanusGraph operator has the following capabilities:
 
-* Deploys JanusGraph by creating Services, Deployments, RoleBinding  [CAPITALIZE ALL OF THESE?]
+* Deploys JanusGraph by creating its Services, Deployments, and RoleBinding
 * Ensures that managed resources reach a healthy state, and conveys readiness of the resources to the user through the status block of the custom resource
-* Manages scalability by resizing the underlying resources by applying changes to the Custom Resource instance
+* Manages scalability by resizing the underlying resources in response to changes in the custom resource
 
 ## Flow
 
@@ -63,7 +63,7 @@ $ git clone https://github.com/IBM/janusgraph-operator.git
 $ cd cassandra-openshift
 ```
 
-You need to update the default configurations of Cassandra so that it can be deployed to OpenShift. The changes are defined in the `Dockerfile`. In order to adapt to the OpenShift environment, you need to change the group ownership and file permission to root. Although OpenShift runs containers using an arbitrarily assigned user ID, the group ID must always be set to the root group (0). And there are other changes that Cassandra needs for it to be successfully deployed which will not be covered in this tutorial. [CAN READERS FIND THIS INFORMATION SOMEWHERE ELSE?]
+You need to update the default configurations of Cassandra so that it can be deployed to OpenShift. The changes are defined in the `Dockerfile`. In order to adapt to the OpenShift environment, you need to change the group ownership and file permission to root. (See [Set group ownership and file permission](https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#6-set-group-ownership-and-file-permission) in "[Best practices for designing a universal application image](https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/).") Although OpenShift runs containers using an arbitrarily assigned user ID, the group ID must always be set to the root group (0). And there are other changes that Cassandra needs for it to be successfully deployed which will not be covered in this tutorial. [CAN READERS FIND THIS INFORMATION SOMEWHERE ELSE?]
 
 You can build and push the Cassandra image to your image repository by running following commands:
 
@@ -78,7 +78,7 @@ docker push <repository hostname>/<username>/cassandra:1.0
 
 _**Note:** You need to change "repository hostname" and "username" accordingly._
 
-After the image is built, you can deploy Cassandra as a `Stateful set` in OpenShift.
+After the image is built, you can deploy Cassandra as a `StatefulSet` in OpenShift.
 
 Run the following command to deploy Cassandra from the cloned directory in the terminal:
 
@@ -92,12 +92,12 @@ To ensure that Cassandra is running, it should create one instance of the Cassan
 
 ### 2. Clone and modify the JanusGraph Docker image
 
-The JanusGraph Docker image from the official repo deploys fine with Kubernetes but not for OpenShift. There are few things that need to be modified before you can deploy:
+The JanusGraph Docker image from the official repo deploys fine into Kubernetes but runs into errors when deployed into OpenShift. There are few things that need to be modified before you can deploy:
 
 * Fork the repo `https://github.com/JanusGraph/janusgraph-docker`.
-* Change the file and group ownership to root (0) for related folders. The following modifications apply to the `Dockerfile`:
+* [Change the file and group ownership](https://developer.ibm.com/learningpaths/universal-application-image/design-universal-image/#6-set-group-ownership-and-file-permission) to root (0) for related folders. The following modifications apply to the `Dockerfile`:
 ```bash
-chgrp -R 0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
+chgrp -R 1001:0 ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR} && \
 chmod -R g+w ${JANUS_HOME} ${JANUS_INITDB_DIR} ${JANUS_CONFIG_DIR} ${JANUS_DATA_DIR}
 
 RUN chmod u+x /opt/janusgraph/bin/gremlin.sh
@@ -158,9 +158,9 @@ $ ./build-images.sh -- if you have modified the file provided by JanusGraph
 
 ### 3. Deploy the JanusGraph operator
 
-The operator project is created using `Operator SDK`, and you can initialize and create the project structure using the SDK. To make things easier, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can go to our operator articles [here](level-1-operator.md).  [LINK TO PREVIOUS TUTORIAL HERE.]
+Use the Operator SDK to create the operator project, and you can initialize and create the project structure using the SDK. To make things easier, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can go to our operator articles [here](level-1-operator.md).  [LINK TO PREVIOUS TUTORIAL HERE.]
 
-The Custom Resource (CR) instance and Spec definition in your API should look like the following:
+The custom resource (CR) instance and spec definition in your API should look like the following:
 
 
 <table>
@@ -211,9 +211,9 @@ $ ./build-and-deploy.sh
 
 For more information, you can check out the controller code. The operator controller code is responsible for the following tasks:
 
-* Creating services so that it can be exposed with an IP
-* Creating deployments of JanusGraph images based on the Custom Resource instance specification
-* Conveying the readiness of JanusGraph leveraging the status block of the Custom Resource
+* Creates the Kubernetes Service that exposes the JanusGraph database with an IP
+* Creates the Kubernetes Deployments containing JanusGraph images, configuring them based on the specification in the custom resource 
+* Sets the status block in the custom resource to show the readiness of the JanusGraph database
 
 Let's take a look at all of the resources that the operator has deployed for JanusGraph. Run the following command in your terminal:
 
@@ -228,9 +228,9 @@ The output should look like this:
 
 ### 4. Load and test retrieval of data using the Gremlin console
 
-In order to load the data, there is a Groovy script, [load_data.groovy](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/data/load_data.groovy), that you need to run from your Gremlin console. First, download the [Gremlin console](https://tinkerpop.apache.org/downloads.html) if you haven't already done so.
+To load the data, use your Gremlin console to run the Groovy script [load_data.groovy](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/data/load_data.groovy). To do so, first, download the [Gremlin console](https://tinkerpop.apache.org/downloads.html) if you haven't already done so.
 
-Once it's downloaded and unzipped, go to `conf/remote.yaml` and update it with the following configuration.
+Once it's downloaded and unzipped, go to `conf/remote.yaml` and update it with the following configuration:
 
 _**NOTE:** `HOST_NAME` is the external IP from your cluster and it can be retrieved using `oc get svc`. Copy the `EXTERNAL-IP` for `jansugraph-sample-service` and replace it._
 
@@ -255,7 +255,7 @@ workerPoolSize: 16
 nioPoolSize: 8
 ```
 
-Copy the Groovy script and paste it into the Gremlin console data directory. Then, from the terminal run the following from the root of your Gremlin console:
+Copy the Groovy script and paste it into the Gremlin console data directory. Then, from the terminal, run the following from the root of your Gremlin console:
 
 ```bash
 $ bin/gremlin.sh
@@ -269,7 +269,7 @@ Then run the following command to load the Groovy script that you copied and pas
 $ :load data/load_data.groovy
 ```
 
-This will load the data. To test to confirm that the data has been successfully loaded, you should run a Gremlin query to get all the airlines:
+This will load the data. To confirm that the data has been successfully loaded, you should run a Gremlin query to get all the airlines:
 
 ```bash
 gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
@@ -282,17 +282,15 @@ You have now successfully loaded your data.
 
 ### 5. Test the sizing of JanusGraph using the operator
 
-In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done from the console. [NOT SURE HOW TO REPHRASE THIS SENTENCE.]
+Next, let's confirm that the operator can successfully scale the JanusGraph database up or down. This can be performed using the OpenShift console.
 
-Go to the OpenShift console in IBM cloud.
-
-From your provisioned cluster, which you already set up as part of the Prerequisites, select the cluster and go to **OpenShift web console** by clicking the button at the top-right corner of the page.
+To open the OpenShift console in IBM cloud, in the IBM Cloud console, navigate to the cluster you provisioned your operator and JanusGraph into, and press the **OpenShift web console** button at the top-right corner of the page.
 
 ![OpenShift](../images/openshift-2.png)
 
-Then, choose your project by clicking **Projects** in the left navigation menu and selecting your project name, which is also the namespace that you used before deploying the operator.
+In the OpenShift console, select your project in the **Project** combo box along the top of the window. Your project is the namespace that you deployed you operator into.
 
-Then, from the left navigation menu again, select **Workloads** and click **Stateful Sets** to get the operator deployment. On the main page, you will see **janusgraph-sample** listed as a stateful deployment. Select that deployment.
+Then, from the left navigation menu, select **Workloads** and **Stateful Sets**. Click on the one named `janusgraph-sample`.
 
 ![stateful set](../images/statefulset.png)
 
@@ -320,10 +318,4 @@ This should consistently retrieve the same data regardless of how many times you
 
 ## Conclusion
 
-**Congratulations!** You've now successfully deployed a JanusGraph operator Level I, and you have tested the deployment with resizing the replicas, and checked the integrity of the data in the new pods.
-
-# License  [REMOVE THIS SECTION?]
-
-This code pattern is licensed under the Apache Software License, Version 2.  Separate third-party code objects invoked within this code pattern are licensed by their respective providers pursuant to their own separate licenses. Contributions are subject to the [Developer Certificate of Origin, Version 1.1 (DCO)](https://developercertificate.org/) and the [Apache Software License, Version 2](https://www.apache.org/licenses/LICENSE-2.0.txt).
-
-[Apache Software License (ASL) FAQ](https://www.apache.org/foundation/license-faq.html#WhatDoesItMEAN)
+**Congratulations!** You've now successfully deployed a JanusGraph operator level 1, and you have tested the deployment by resizing the replicas, and checked the integrity of the data in the new pods.
