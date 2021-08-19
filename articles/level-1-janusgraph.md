@@ -45,7 +45,7 @@ For a LEVEL 1, Janusgraph operator will have the following capabillities:
 1. [Clone and Modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
 1. [Deploy Janusgraph operator](#3-deploy-janusgraph-operator)
 1. [Load and test retrieve of data using gremlin console](#3-load-and-test-retrieve-of-data-using-gremlin-console)
-1. [Test sizing of Janusgraph using the operator](#4-test-sizing-of-janusgraph-using-the-operator)
+1. [Scale/Descale Janusgraph instances](#4-scale/descale-janusgraph-instances)
 
 ### 1. Deploy Cassandra to OpenShift
 
@@ -271,9 +271,37 @@ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedu
 
 We have now successfully loaded our data.
 
-### 5. Test sizing of Janusgraph operator
+### 5. Scale/Descale Janusgraph instances
 
-In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done from the console. Go to openshift console in IBM cloud.
+
+
+In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done using two ways:
+
+* Applying the udpated Custom Resource (CR)
+* From the OpenShift console. 
+
+#### Applying the updated Custom Resource (CR)
+
+You can scale/descale the number of Janusgraph instances by changing the `spec` in your Custom Resource instance. Change the `Size` in the following spec,
+
+```bash
+  apiVersion: graph.example.com/v1alpha1
+  kind: Janusgraph
+  metadata:
+    name: janusgraph-sample
+  spec:
+    # update the size to scale/descale Janusgraph instances
+    size: 3
+    version: 1.0.1
+```
+
+And apply to the cluster using:
+
+```bash
+oc apply -f samples/graph_v1alpha1_janusgraph.yaml
+```
+
+#### From the OpenShift Console
 
 From your provisioned cluster which which you have already setup part of pre-requisistes, select the cluster and go to `OpenShift web console` by clicking the button from top right corner of the page.
 

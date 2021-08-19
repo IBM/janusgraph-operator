@@ -2,7 +2,7 @@
 set -x
 set -e
 
-export img="sanjeevghimire/janusgraph-operator:1.0.21"
+export img="sanjeevghimire/janusgraph-operator:1.0.20"
 export namespace="sanjeev-janus-demo"
 
 make generate
