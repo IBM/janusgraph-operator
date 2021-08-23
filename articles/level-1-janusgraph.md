@@ -277,8 +277,8 @@ We have now successfully loaded our data.
 
 In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done using two ways:
  
-* Applying the udpated Custom Resource (CR) 
-* From the OpenShift console
+* Applying the udpated Custom Resource (CR) - The size speficied specified in CR will be updated in the cluster.
+* From the OpenShift console - The size defined in the CR is maintained even though its increased or decreased.
 
 #### Applying the updated Custom Resource (CR)
 
@@ -317,7 +317,7 @@ This will bring to a screen that shows the number of replicas that has been depl
 
 ![Replicas](../images/replicas.png)
 
-To test the sizing of Janusgraph, you can increase the number of pods by clicking the up arrow next to pods and decrease by clicking the down arrow next to the pods.
+To test the sizing of Janusgraph, you can increase the number of pods by clicking the up arrow next to pods and decrease by clicking the down arrow next to the pods. But the cluster will bring back the size of the cluster to its original size. This proves that the communication to the cluster can only be done through Custom Resource (CR).
 
 After each increment and decrement, you can go to the terminal where you have connected to Janusgraph using gremlin console from your local machine, and run `get` commands to retrieve data back. On all resizing, you should consistently see the same amount of data retrieved. Run the following query to receive all the airlines with duplicat data removed: 
 
