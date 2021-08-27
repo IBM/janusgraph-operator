@@ -48,7 +48,7 @@ To complete this tutorial, we assume that you:
 ## Steps
 
 1. [Deploy Cassandra to OpenShift](#1-deploy-cassandra-to-openshift)
-1. [Clone and Modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
+1. [Clone and modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
 1. [Deploy Janusgraph operator](#3-deploy-janusgraph-operator)
 1. [Load and test retrieve of data using gremlin console](#4-load-and-test-retrieve-of-data-using-gremlin-console)
 1. [Scaling Janusgraph](#5-scaling-janusgraph)
