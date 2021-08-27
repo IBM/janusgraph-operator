@@ -228,7 +228,7 @@ The output should look like this:
 
 ### 4. Load and test retrieval of data using the Gremlin console
 
-To load the data, use your Gremlin console to run the Groovy script [load_data.groovy](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/data/load_data.groovy). To do so, first, download the [Gremlin console](https://tinkerpop.apache.org/downloads.html) if you haven't already done so.
+To load the data, use your Gremlin console to run the Groovy script [load_data.groovy](https://github.com/IBM/janusgraph-operator/blob/main/data/load_data.groovy). To do so, first, download the [Gremlin console](https://tinkerpop.apache.org/downloads.html) if you haven't already done so.
 
 Once it's downloaded and unzipped, go to `conf/remote.yaml` and update it with the following configuration:
 
