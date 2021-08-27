@@ -48,10 +48,10 @@ To complete this tutorial, we assume that you:
 ## Steps
 
 1. [Deploy Cassandra to OpenShift](#1-deploy-cassandra-to-openshift)
-1. [Clone and modify the JanusGraph Docker image](#2-clone-and-modify-the-janusgraph-docker-image)
-1. [Deploy the JanusGraph operator](#3-deploy-the-janusgraph-operator)
-1. [Load and test retrieval of data using the gremlin console](#3-load-and-test-retrieval-of-data-using-the-gremlin-console)
-1. [Test the sizing of JanusGraph using the operator](#4-test-the-sizing-of-janusgraph-using-the-operator)
+1. [Clone and modify Janusgraph docker image](#2-clone-and-modify-janusgraph-docker-image)
+1. [Deploy Janusgraph operator](#3-deploy-janusgraph-operator)
+1. [Load and test retrieve of data using gremlin console](#4-load-and-test-retrieve-of-data-using-gremlin-console)
+1. [Scaling Janusgraph](#5-scaling-janusgraph)
 
 ### 1. Deploy Cassandra to OpenShift
 
@@ -269,7 +269,7 @@ Then run the following command to load the Groovy script that you copied and pas
 $ :load data/load_data.groovy
 ```
 
-This will load the data. To confirm that the data has been successfully loaded, you should run a Gremlin query to get all the airlines:
+To retrieve the data and test to make sure the data has been successfully loaded, we will run a gremlin query to get all the airlines:
 
 ```bash
 gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
@@ -280,11 +280,18 @@ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedu
 
 You have now successfully loaded your data.
 
-### 5. Test the sizing of JanusGraph using the operator
+In the next section, we will scale the JanusGraph instance by changing the number of pod replicas. As you do so, rerun this Gremlin query to show that the set of data in the database remains the same, that the starting or stopping pod replicas does not duplicate or lose data.
 
-Next, let's confirm that the operator can successfully scale the JanusGraph database up or down. This can be performed using the OpenShift console.
+### 5. Scaling JanusGraph
 
-To open the OpenShift console in IBM cloud, in the IBM Cloud console, navigate to the cluster you provisioned your operator and JanusGraph into, and press the **OpenShift web console** button at the top-right corner of the page.
+The JanusGraph instance can scale to run more pods to handle more client load and spread it across more cluster nodes. However, scaling is adjusted differently when an operator is managing an instance. We'll look at two approaches a developer can use to scale a set of pods:
+
+* First, we'll look at how a developer can typically scale set of pods manually, and see how that doesn't work quite the same with an operator.
+* Second, we'll look at how a developer can use an operator to scale a set of pods that the operator is managing.
+
+#### Manually adjust the number of pod replicas
+
+From your provisioned cluster which which you have already setup part of prerequisites, select the cluster and go to `OpenShift web console` by clicking the button from top right corner of the page.
 
 ![OpenShift](../images/openshift-2.png)
 
@@ -298,24 +305,37 @@ This will bring you to a screen that shows the number of replicas that have been
 
 ![Replicas](../images/replicas.png)
 
-To test the sizing of JanusGraph, you can increase the number of pods by clicking the up arrow next to pods, and decrease it by clicking the down arrow.
+Typically, a developer can use this view to manually change the number of pod replicas, but this works a bit differently in a Deployment or StatefulSet being managed by an operator. In this view, you can use the up and down arrows next to the set of pods to increase or decrease the number of pods. Indeed, if you try that here, the view shows that the number of replicas does change. But wait a minute and the number changes back to 3 again. Why? Because this resource is being managed by the JanusGraph operator, and its CR says that the size is 3. So when the size differs from 3, the operator puts it back.
 
-After each increment and decrement, you can go to the terminal where you connected to JanusGraph using the Gremlin console from your local machine, and run `get` commands to retrieve the data. On all resizing, you should consistently see the same amount of data retrieved. Run the following query to receive all the airlines with any duplicate data removed:
+To adjust the number of pod replicas and have the change stick, we'll need to use the operator.
+
+#### Use the operator to adjust the number of pod replicas
+
+To tell the operator to adjust the number of pod replicas, change that setting in the custom resource. Because the CR describes the instance's configuration, changing the settings in the CR causes the operator to change the configuration in the instance.
+
+To scale the number of pod replicas in the JanusGraph instance, change the `spec` in your custom resource instance. Change the `Size` in the following spec:
 
 ```bash
-$ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
+  apiVersion: graph.example.com/v1alpha1
+  kind: Janusgraph
+  metadata:
+    name: janusgraph-sample
+  spec:
+    # update the size to scale/descale Janusgraph instances
+    size: 3
+    version: 1.0.1
 ```
 
-This should consistently retrieve the same data regardless of how many times you've resized. The output should look like this: 
+And apply to the cluster using:
 
 ```bash
-[
-  "Spartan Airlines",
-  "Phoenix Airlines",
-  "MilkyWay Airline"
-]
+oc apply -f samples/graph_v1alpha1_janusgraph.yaml
 ```
 
-## Conclusion
+In the view of the stateful set in the OpenShift console, watch the number of pod replicas. After a minute, the number will adjust to the new size you specified in the CR. This is because the operator saw the new size and made the necessary adjustments to the instance it's managing.
 
-**Congratulations!** You've now successfully deployed a JanusGraph operator level 1, and you have tested the deployment by resizing the replicas, and checked the integrity of the data in the new pods.
+**Congratulations!** You've successfully deployed an Janusgraph operator `Level I`. And you also have tested the deployment with resizing the replicas and  checked the integrity of the data in new pods.
+
+# License
+
+This code pattern is licensed under the Apache Software License, Version 2.  Separate third party code objects invoked within this code pattern are licensed by their respective providers pursuant to their own separate licenses. Contributions are subject to the [Developer Certificate of Origin, Version 1.1 (DCO)](https://developercertificate.org/) and the [Apache Software License, Version 2](https://www.apache.org/licenses/LICENSE-2.0.txt).
