@@ -261,7 +261,7 @@ Then run the following command to load the groovy script that you copied and pas
 $ :load data/load_data.groovy
 ```
 
-This will load the data and to test to make sure the data has been successfully loaded, we will run a gremlin query to get all the airlines:
+To retrieve the data and test to make sure the data has been successfully loaded, we will run a gremlin query to get all the airlines:
 ```bash
 gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
 ==>MilkyWay Airlines
@@ -271,18 +271,40 @@ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedu
 
 We have now successfully loaded our data.
 
-### 5. Scale/Descale Janusgraph instances
+In the next section, we will scale the JanusGraph instance by changing the number of pod replicas. As you do so, rerun this Gremlin query to show that the set of data in the database remains the same, that the starting or stopping pod replicas does not duplicate or lose data.
 
+### 5. Scaling JanusGraph
 
+The JanusGraph instance can scale to run more pods to handle more client load and spread it across more cluster nodes. However, scaling is adjusted differently when an operator is managing an instance. We'll look at two approaches a developer can use to scale a set of pods:
 
-In order to to make sure the operator runs successfully when scaling Janusgraph up or down, can be done using two ways:
- 
-* Applying the udpated Custom Resource (CR) - The size speficied specified in CR will be updated in the cluster.
-* From the OpenShift console - The size defined in the CR is maintained even though its increased or decreased.
+* First, we'll look at how a developer can typically scale set of pods manually, and see how that doesn't work quite the same with an operator.
+* Second, we'll look at how a developer can use an operator to scale a set of pods that the operator is managing.
 
-#### Applying the updated Custom Resource (CR)
+#### Manually adjust the number of pod replicas
 
-You can scale/descale the number of Janusgraph instances by changing the `spec` in your Custom Resource instance. Change the `Size` in the following spec,
+From your provisioned cluster which which you have already setup part of prerequisites, select the cluster and go to `OpenShift web console` by clicking the button from top right corner of the page.
+
+![OpenShift](../images/openshift-2.png)
+
+Then, choose your project by clicking `Projects` from the left navigation menu and selecting your `project name`, which is also the `namespace` that you have used before deploying the operator.
+
+Then from the left navigation menu again, select `workloads` and click `Stateful Sets` to get the operator deployment. In the main page, you will see `janusgraph sample` as stateful deployment, select that deployment.
+
+![stateful set](../images/statefulset.png)
+
+This will bring to a screen that shows the number of replicas that has been deployed.
+
+![Replicas](../images/replicas.png)
+
+Typically, a developer can use this view to manually change the number of pod replicas, but this works a bit differently in a Deployment or StatefulSet being managed by an operator. In this view, you can use the up and down arrows next to the set of pods to increase or decrease the number of pods. Indeed, if you try that here, the view shows that the number of replicas does change. But wait a minute and the number changes back to 3 again. Why? Because this resource is being managed by the JanusGraph operator, and its CR says that the size is 3. So when the size differs from 3, the operator puts it back.
+
+To adjust the number of pod replicas and have the change stick, we'll need to use the operator.
+
+#### Use the operator to adjust the number of pod replicas
+
+To tell the operator to adjust the number of pod replicas, change that setting in the custom resource. Because the CR describes the instance's configuration, changing the settings in the CR causes the operator to change the configuration in the instance.
+
+To scale the number of pod replicas in the JanusGraph instance, change the `spec` in your custom resource instance. Change the `Size` in the following spec:
 
 ```bash
   apiVersion: graph.example.com/v1alpha1
@@ -301,39 +323,7 @@ And apply to the cluster using:
 oc apply -f samples/graph_v1alpha1_janusgraph.yaml
 ```
 
-#### From the OpenShift Console
-
-From your provisioned cluster which which you have already setup part of pre-requisistes, select the cluster and go to `OpenShift web console` by clicking the button from top right corner of the page.
-
-![OpenShift](../images/openshift-2.png)
-
-Then, choose your project by clicking `Projects` from the left navigation menu and selecting your `project name`, which is also the `namespace` that you have used before deploying the operator.
-
-Then from the left navigation menu again, select `workloads` and click `Stateful Sets` to get the operator deployment. In the main page, you will see `janusgraph sample` as stateful deployment, select that deployment.
-
-![stateful set](../images/statefulset.png)
-
-This will bring to a screen that shows the number of replicas that has been deployed.
-
-![Replicas](../images/replicas.png)
-
-To test the sizing of Janusgraph, you can increase the number of pods by clicking the up arrow next to pods and decrease by clicking the down arrow next to the pods. But the cluster will bring back the size of the cluster to its original size. This proves that the communication to the cluster can only be done through Custom Resource (CR).
-
-After each increment and decrement, you can go to the terminal where you have connected to Janusgraph using gremlin console from your local machine, and run `get` commands to retrieve data back. On all resizing, you should consistently see the same amount of data retrieved. Run the following query to receive all the airlines with duplicat data removed: 
-
-```bash
-$ gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
-```
-
-This should consistently retrieve same data back despite of any number of resizing. The output will be as below: 
-
-```bash
-[
-  "Spartan Airlines",
-  "Phoenix Airlines",
-  "MilkyWay Airline"
-]
-```
+In the view of the stateful set in the OpenShift console, watch the number of pod replicas. After a minute, the number will adjust to the new size you specified in the CR. This is because the operator saw the new size and made the necessary adjustments to the instance it's managing.
 
 **Congratulations!** You've successfully deployed an Janusgraph operator `Level I`. And you also have tested the deployment with resizing the replicas and  checked the integrity of the data in new pods.
 
