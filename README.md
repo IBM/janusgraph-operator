@@ -10,3 +10,7 @@ level 1 operator.
 - [Part 2](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/level-1-janusgraph.md) will feature Cassandra as the backend storage for JanusGraph, which is more suitable for for production use cases. 
 
 2. [The Operator Cookbook: How to make an operator from scratch](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/operator-cookbook.md): In this article, we will discuss common building blocks for level 1 operators, and what logic a service vendor would need to write themselves in order to build a level 1 operator.
+
+3. [LEVEL 2 : Seamless upgrade for JanusGraph Operator](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/level-2-janusgraph.md): This tutorial builds on the Level 1 JanusGraph operator to add Level 2 capabilities.
+
+4. [Certifying Janusgraph Image](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/janusgraph-certification.md) shows the steps to submit the JanusGraph image and its operator for Red Hat certification.
