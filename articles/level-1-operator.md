@@ -15,17 +15,17 @@ This will enable use to replicate our data across multiple Pods, and give us hig
 
 ## Expectations (What you have)
 * You have some experience developing operators
-* You've finished the beginner and intermediate tutorials in this learning path, including  [Develop and Deploy a Memcached Operator on OpenShift Container Platform](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md)
+* You've finished the beginner and intermediate tutorials in this learning path, including  [Develop and Deploy a Memcached Operator on OpenShift Container Platform](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md)
 * You've read articles and blogs on the basic idea of a Kubernetes Operators, and you know the basic Kubernetes resource types
 
 ## Expectations (What you want)
 * You want deep technical knowledge of how to implement a Level 1 operator
 
 ## Prerequisites
-* You've completed the [environment setup](https://github.ibm.com/TT-ISV-org/operator/blob/main/installation.md)
+* You've completed the [environment setup](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/installation.md)
 * You have some knowledge of Kubernetes Operators concepts
-* You've created [Memcached Operator](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md)
-* You've read [Deep Dive into Memcached Operator Code](https://github.ibm.com/TT-ISV-org/operator/blob/main/INTERMEDIATE_TUTORIAL.md)
+* You've created [Memcached Operator](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md)
+* You've read [Deep Dive into Memcached Operator Code](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/INTERMEDIATE_TUTORIAL.md)
 
 ## Steps
 1. [Overview](#1-overview)
@@ -180,15 +180,15 @@ func init() {
 ```
 
 As shown above, we've added the `Size` and `Version` fields to the `Spec`. We've also added the `Spec` and `Status` fields to the `Janusgraph` struct. This 
-should be familiar to you if you've completed the [Develop and Deploy a Memcached Operator on OpenShift Container Platform](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md) tutorial. If you have not, that tutorial will offer more details about using the Operator SDK.
+should be familiar to you if you've completed the [Develop and Deploy a Memcached Operator on OpenShift Container Platform](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md) tutorial. If you have not, that tutorial will offer more details about using the Operator SDK.
 
 ## 4. Controller Logic: Creating a Service
 
 <b>Note: If you want to learn more in depth about the controller logic that is written here,
-please view our [Deep dive into Memcached Operator Code](https://github.ibm.com/TT-ISV-org/operator/blob/main/INTERMEDIATE_TUTORIAL.md) article.</b>
+please view our [Deep dive into Memcached Operator Code](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/INTERMEDIATE_TUTORIAL.md) article.</b>
 
 Now that we have our API updated, our next step is to implement our controller logic in `controllers/janusgraph_controller.go`. First, go ahead and copy the code from the 
-[artifacts/janusgraph_controller.go](https://github.ibm.com/TT-ISV-org/operator/blob/main/artifacts/janusgraph_controller.go) file, and replace your current controller code.
+[artifacts/janusgraph_controller.go](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/artifacts/janusgraph_controller.go) file, and replace your current controller code.
 
 Once this is complete, your controller should look like the following:
 
@@ -894,7 +894,7 @@ return ctrl.Result{}, nil
 
 Now, we will go ahead and login to our OpenShift cluster. 
 You can follow the steps described in the [previous 
-tutorial](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md#5-compile-build-and-push). After you've logged in, go ahead and 
+tutorial](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md#5-compile-build-and-push). After you've logged in, go ahead and 
 create a new project:
 
 ```bash
@@ -932,9 +932,9 @@ spec:
   version: latest 
 ``` 
 In the above code, we set the replicas to 1, and the 
-version to `latest`. We will use `kubectl` to create this custom resource as part of a the [`build-and-deploy-janus.sh`](https://github.ibm.com/TT-ISV-org/operator/blob/main/scripts/build-and-deploy-janus.sh) script.
+version to `latest`. We will use `kubectl` to create this custom resource as part of a the [`build-and-deploy-janus.sh`](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/scripts/build-and-deploy-janus.sh) script.
 
-Open up the editor of your choice and create a new file called `build-and-deploy-janus.sh` script with the following code (you can view a copy of the code [in GitHub](https://github.ibm.com/TT-ISV-org/operator/blob/main/scripts/build-and-deploy-janus.sh)):
+Open up the editor of your choice and create a new file called `build-and-deploy-janus.sh` script with the following code (you can view a copy of the code [in GitHub](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/scripts/build-and-deploy-janus.sh)):
 
 ```bash
 set -x
@@ -1039,11 +1039,11 @@ You should see one `janusgraph-sample` pod running.
 ### Load and retrieve data from JanusGraph using gremlin console
 
 Now that we have our JanusGraph application running in a Pod, let's test it to make sure it works as expected. Please go to 
-[the next JanusGraph tutorial](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/level-1-janusgraph.md#4-load-and-test-retrieve-of-data-using-gremlin-console) to see the steps which need to be taken to test your JanusGraph application. 
+[the next JanusGraph tutorial](https://https://github.com/IBM/janusgraph-operator/blob/main/articles/level-1-janusgraph.md#4-load-and-test-retrieve-of-data-using-gremlin-console) to see the steps which need to be taken to test your JanusGraph application. 
 
 You'll use the data file in the `data` directory from this repo, so you may first need to clone the repo. 
 
-Once you reach the bottom of [step 4 of the next tutorial](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/level-1-janusgraph.md#4-load-and-test-retrieve-of-data-using-gremlin-console) you should be able to list all of your data, and should get a response like the following:
+Once you reach the bottom of [step 4 of the next tutorial](https://https://github.com/IBM/janusgraph-operator/blob/main/articles/level-1-janusgraph.md#4-load-and-test-retrieve-of-data-using-gremlin-console) you should be able to list all of your data, and should get a response like the following:
 
 ```groovy
 gremlin> g.V().has("object_type", "flight").limit(30000).values("airlines").dedup().toList()
@@ -1058,7 +1058,7 @@ If you've gotten the result from above, then great job! You're done testing your
 
 **Congratulations!!** You've just created a level 1 
 operator for JanusGraph, using the default 
-BerkeleyDB configuration. Great job! In the [next section](https://github.ibm.com/TT-ISV-org/janusgraph-operator/blob/main/articles/level-1-janusgraph.md) of the tutorial, we will show how to create a 
+BerkeleyDB configuration. Great job! In the [next section](https://https://github.com/IBM/janusgraph-operator/blob/main/articles/level-1-janusgraph.md) of the tutorial, we will show how to create a 
 more complex level 1 operator for JanusGraph, using 
 Cassandra as the backend storage. We will also show
 how to scale the JanusGraph application up and down, 
