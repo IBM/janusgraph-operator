@@ -6,7 +6,7 @@ This tutorial examines common building blocks for level 1 operators, and shows y
 to build a level 1 operator. It uses the [Operator Capability Levels](https://operatorframework.io/operator-capabilities/) as a guideline for what is considered a level 1 operator.
 
 By developing and deploying the [Memcached Operator](https://developer.ibm.com/learningpaths/kubernetes-operators/develop-deploy-simple-operator/create-operator/) 
-and the [JanusGraph Operator](https://github.ibm.com/TT-ISV-org/operator/blob/main/articles/level-1-operator.md) [**NEED TO UPDATE THIS LINK**], you can 
+and the [JanusGraph Operator](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/articles/level-1-operator.md) [**NEED TO UPDATE THIS LINK**], you can 
 analyze the similarities in the controller code and think about what each operator must do at a high level.
 
 ## Characteristics of an operator
@@ -29,7 +29,7 @@ Here are the main characteristics of a level 1 operator covered in this tutorial
 ## Define the API
 
 When building an operator, the easiest way to get started is by using the [Operator SDK](https://sdk.operatorframework.io/). Once you've 
-finished the first steps, such as using the [`operator sdk init`](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md#1-create-a-new-project-using-operator-sdk) and [`operator sdk create api`](https://github.ibm.com/TT-ISV-org/operator/blob/main/BEGINNER_TUTORIAL.md#2-create-api-and-custom-controller) [**SHOULD THIS LINK TO A PREVIOUSLY PUBLISHED TUTORIAL?**] commands, you'll want to update the API.
+finished the first steps, such as using the [`operator sdk init`](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md#1-create-a-new-project-using-operator-sdk) and [`operator sdk create api`](https://github.com/IBM/create-and-deploy-memcached-operator-using-go/blob/main/BEGINNER_TUTORIAL.md#2-create-api-and-custom-controller) [**SHOULD THIS LINK TO A PREVIOUSLY PUBLISHED TUTORIAL?**] commands, you'll want to update the API.
 
 This is where you design the structure of your custom resource. For simple cases, you'll likely use something like the `Size` and `Version` fields 
 in the `Spec` section of your custom resource.
