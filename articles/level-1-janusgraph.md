@@ -96,6 +96,8 @@ The JanusGraph Docker image from the official repo deploys fine into Kubernetes 
 
 Follow this [link](https://github.com/IBM/janusgraph-docker-openshift/blob/main/README-openshift.md) to create an JanusGraph image that can be deployable to OpenShift.
 
+>Note: Make sure to use this modified image in your controller logic in future steps
+
 ### 3. Deploy the JanusGraph operator
 
 Use the Operator SDK to create the operator project, and you can initialize and create the project structure using the SDK. To make things easier, we have already created a project structure using the SDK. If you want to learn more about Operator SDK and controller code structure, you can go to our operator articles [here](level-1-operator.md).  [LINK TO PREVIOUS TUTORIAL HERE.]
